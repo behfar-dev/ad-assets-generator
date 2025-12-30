@@ -1,76 +1,76 @@
 
 
- Ad Assets Generator - SAAS Platform v1.0 Roadmap
+# Ad Assets Generator - SAAS Platform v1.0 Roadmap
 
- Project Vision
+## Project Vision
 Transform the ad assets generator into a full-featured SAAS platform with brutalist design, user management, and a credit-based system.
 
 ---
 
- Phase 1: Foundation & Setup
+## Phase 1: Foundation & Setup
 
- 1.1 Project Architecture
-- [ ] Set up database schema (Prisma + PostgreSQL)
+### 1.1 Project Architecture
+- [x] Set up database schema (Prisma + PostgreSQL)
   - Users table (id, email, name, passwordHash, createdAt, updatedAt)
   - Credits table (id, userId, balance, createdAt, updatedAt)
   - CreditTransactions table (id, userId, amount, type, description, timestamp)
   - Projects table (id, userId, name, description, createdAt, updatedAt)
   - Assets table (id, projectId, userId, type, aspectRatio, url, prompt, createdAt)
   - Sessions table (for NextAuth)
-- [ ] Install and configure Prisma ORM
+- [x] Install and configure Prisma ORM
 - [ ] Set up PostgreSQL database (local + production)
 - [ ] Create database migration scripts
-- [ ] Set up environment variables structure (.env.example)
+- [x] Set up environment variables structure (.env.example)
 
- 1.2 Authentication System
-- [ ] Install NextAuth.js
-- [ ] Configure email/password authentication
-- [ ] Add Google OAuth provider
-- [ ] Create signup page with email verification
-- [ ] Create login page
-- [ ] Create password reset flow
-- [ ] Add protected route middleware
-- [ ] Create user profile page
-- [ ] Add session management
+### 1.2 Authentication System
+- [x] Install NextAuth.js
+- [x] Configure email/password authentication
+- [x] Add Google OAuth provider
+- [x] Create signup page with email verification
+- [x] Create login page
+- [x] Create password reset flow
+- [x] Add protected route middleware
+- [x] Create user profile page
+- [x] Add session management
 
 ---
 
- Phase 2: Brutalist Design System
+## Phase 2: Brutalist Design System
 
- 2.1 Design Tokens & Foundation
-- [ ] Define brutalist color palette
+### 2.1 Design Tokens & Foundation
+- [x] Define brutalist color palette
   - Primary: Stark blacks, whites, and one accent color
   - High contrast ratios
   - Raw, unpolished aesthetic
-- [ ] Typography system
+- [x] Typography system
   - Bold, heavy sans-serif fonts (IBM Plex Mono, Space Grotesk)
   - Large, aggressive headings
   - Tight line-heights
   - Monospace for technical elements
-- [ ] Create design tokens file (colors, spacing, typography)
-- [ ] Update Tailwind config with brutalist theme
-- [ ] Design component primitives (borders, shadows, shapes)
+- [x] Create design tokens file (colors, spacing, typography)
+- [x] Update Tailwind config with brutalist theme
+- [x] Design component primitives (borders, shadows, shapes)
 
- 2.2 Core UI Components (Brutalist Style)
-- [ ] Button variants (primary, secondary, danger, ghost)
+### 2.2 Core UI Components (Brutalist Style)
+- [x] Button variants (primary, secondary, danger, ghost)
   - Heavy borders (3-4px)
   - Sharp corners or extreme rounded
   - Bold hover states
-- [ ] Input fields with chunky borders
-- [ ] Card components with stark borders and shadows
-- [ ] Navigation components (aggressive, geometric)
+- [x] Input fields with chunky borders
+- [x] Card components with stark borders and shadows
+- [x] Navigation components (aggressive, geometric)
 - [ ] Modal/Dialog components
 - [ ] Toast notifications (stark, bold)
 - [ ] Loading states (geometric spinners, bold progress bars)
 - [ ] Badge components (sharp, high-contrast)
 - [ ] Table components (grid-heavy, stark lines)
 
- 2.3 Layout Redesign
-- [ ] Create brutalist header/navigation
+### 2.3 Layout Redesign
+- [x] Create brutalist header/navigation
   - Bold logo treatment
   - Geometric menu items
   - High-contrast state indicators
-- [ ] Design dashboard layout
+- [x] Design dashboard layout
   - Grid-based structure
   - Asymmetric sections
   - Bold typography hierarchy
@@ -80,58 +80,58 @@ Transform the ad assets generator into a full-featured SAAS platform with brutal
 
 ---
 
- Phase 3: Credit System
+## Phase 3: Credit System
 
- 3.1 Credit Architecture
-- [ ] Define credit pricing model
+### 3.1 Credit Architecture
+- [x] Define credit pricing model
   - Images: 1-2 credits each
   - Videos: 5-10 credits each
   - Ad copy generation: 0.5 credits
-- [ ] Create credit packages
+- [x] Create credit packages
   - Starter: 50 credits - $9.99
   - Pro: 200 credits - $29.99
   - Business: 500 credits - $59.99
   - Enterprise: Custom pricing
-- [ ] Implement credit balance tracking
-- [ ] Create credit transaction logging
+- [x] Implement credit balance tracking
+- [x] Create credit transaction logging
 - [ ] Add credit deduction logic to generation functions
 - [ ] Implement credit refund logic (for failed generations)
 
- 3.2 Credit UI Components
-- [ ] Credit balance display (header/dashboard)
-- [ ] Credit usage history page
+### 3.2 Credit UI Components
+- [x] Credit balance display (header/dashboard)
+- [x] Credit usage history page
 - [ ] Low credit warning notifications
-- [ ] Credit purchase modal/page
-- [ ] Credit transaction detail view
+- [x] Credit purchase modal/page
+- [x] Credit transaction detail view
 - [ ] Credit analytics (usage over time)
 
- 3.3 Payment Integration
+### 3.3 Payment Integration
 - [ ] Set up Stripe account
 - [ ] Install Stripe SDK
-- [ ] Create Stripe checkout sessions
-- [ ] Implement payment success/failure webhooks
-- [ ] Add credit top-up on successful payment
-- [ ] Create billing history page
+- [x] Create Stripe checkout sessions
+- [x] Implement payment success/failure webhooks
+- [x] Add credit top-up on successful payment
+- [x] Create billing history page
 - [ ] Add invoice generation
 - [ ] Implement subscription tiers (optional for v1)
 
 ---
 
- Phase 4: User Management & Dashboard
+## Phase 4: User Management & Dashboard
 
- 4.1 User Dashboard
-- [ ] Create main dashboard page
+### 4.1 User Dashboard
+- [x] Create main dashboard page
   - Credit balance widget (large, prominent)
   - Recent projects grid
   - Quick stats (assets generated, credits used)
   - Recent activity feed
-- [ ] Projects overview section
-- [ ] Quick action buttons (New Project, Buy Credits)
+- [x] Projects overview section
+- [x] Quick action buttons (New Project, Buy Credits)
 - [ ] Usage analytics visualization
 - [ ] Welcome onboarding for new users
 
- 4.2 User Profile & Settings
-- [ ] Profile information page
+### 4.2 User Profile & Settings
+- [x] Profile information page
   - Avatar upload
   - Name, email editing
   - Bio/company info
@@ -143,7 +143,7 @@ Transform the ad assets generator into a full-featured SAAS platform with brutal
 - [ ] Account deletion flow
 - [ ] Export user data (GDPR compliance)
 
- 4.3 Admin Panel (Basic)
+### 4.3 Admin Panel (Basic)
 - [ ] Admin authentication/authorization
 - [ ] User management dashboard
   - View all users
@@ -158,20 +158,20 @@ Transform the ad assets generator into a full-featured SAAS platform with brutal
 
 ---
 
- Phase 5: Enhanced Asset Generation Features
+## Phase 5: Enhanced Asset Generation Features
 
- 5.1 Project Organization
-- [ ] Create project creation flow
-- [ ] Project detail page
+### 5.1 Project Organization
+- [x] Create project creation flow
+- [x] Project detail page
   - Project name and description
   - Asset grid view
   - Project settings
 - [ ] Move assets into projects (update data model)
-- [ ] Project deletion with asset cleanup
+- [x] Project deletion with asset cleanup
 - [ ] Project duplication feature
 - [ ] Project sharing (view-only links)
 
- 5.2 Asset Management Improvements
+### 5.2 Asset Management Improvements
 - [ ] Enhanced asset grid with filtering
   - Filter by type (image/video)
   - Filter by aspect ratio
@@ -190,7 +190,7 @@ Transform the ad assets generator into a full-featured SAAS platform with brutal
 - [ ] Asset tagging system
 - [ ] Favorite/star assets
 
- 5.3 Generation UI Improvements
+### 5.3 Generation UI Improvements
 - [ ] Redesigned upload interface (brutalist drag-n-drop)
 - [ ] Better progress indicators with step-by-step feedback
 - [ ] Queue management (show pending generations)
@@ -200,9 +200,9 @@ Transform the ad assets generator into a full-featured SAAS platform with brutal
 
 ---
 
- Phase 6: Core Feature Enhancements
+## Phase 6: Core Feature Enhancements
 
- 6.1 Generation Improvements
+### 6.1 Generation Improvements
 - [ ] Add generation history tracking (prompts, settings)
 - [ ] Implement retry logic for failed generations
 - [ ] Add generation queue system (background jobs)
@@ -211,7 +211,7 @@ Transform the ad assets generator into a full-featured SAAS platform with brutal
 - [ ] Generation templates (save frequently used settings)
 - [ ] A/B testing (generate multiple variants)
 
- 6.2 Export & Download Features
+### 6.2 Export & Download Features
 - [ ] Individual asset download
 - [ ] Bulk ZIP download
 - [ ] Export with metadata (JSON)
@@ -219,7 +219,7 @@ Transform the ad assets generator into a full-featured SAAS platform with brutal
 - [ ] Cloud storage integration (Google Drive, Dropbox - optional)
 - [ ] Download history tracking
 
- 6.3 Collaboration Features (Optional for v1)
+### 6.3 Collaboration Features (Optional for v1)
 - [ ] Team workspaces
 - [ ] Invite team members
 - [ ] Role-based permissions (owner, editor, viewer)
@@ -228,24 +228,24 @@ Transform the ad assets generator into a full-featured SAAS platform with brutal
 
 ---
 
- Phase 7: API & Backend
+## Phase 7: API & Backend
 
- 7.1 API Routes
-- [ ] `/api/auth/*` - NextAuth routes
-- [ ] `/api/user/profile` - GET/PATCH user profile
-- [ ] `/api/user/credits` - GET credit balance
-- [ ] `/api/credits/purchase` - POST create checkout session
-- [ ] `/api/credits/history` - GET transaction history
-- [ ] `/api/projects` - CRUD operations
-- [ ] `/api/projects/[id]/assets` - GET project assets
+### 7.1 API Routes
+- [x] `/api/auth/*` - NextAuth routes
+- [x] `/api/user/profile` - GET/PATCH user profile
+- [x] `/api/credits` - GET credit balance
+- [x] `/api/credits/purchase` - POST create checkout session
+- [x] `/api/credits/history` - GET transaction history
+- [x] `/api/projects` - CRUD operations
+- [x] `/api/projects/[id]` - GET/PATCH/DELETE project
 - [ ] `/api/assets` - GET user assets
 - [ ] `/api/assets/[id]` - GET/DELETE specific asset
 - [ ] `/api/generate/image` - POST image generation
 - [ ] `/api/generate/video` - POST video generation
 - [ ] `/api/generate/copy` - POST ad copy generation
-- [ ] `/api/webhooks/stripe` - POST Stripe webhooks
+- [x] `/api/webhooks/stripe` - POST Stripe webhooks
 
- 7.2 Backend Services
+### 7.2 Backend Services
 - [ ] Asset storage service (S3/Cloudflare R2)
 - [ ] Background job queue (Bull/BullMQ)
 - [ ] Email service (SendGrid/Resend)
@@ -253,7 +253,7 @@ Transform the ad assets generator into a full-featured SAAS platform with brutal
 - [ ] Error tracking (Sentry)
 - [ ] Analytics (PostHog/Plausible)
 
- 7.3 Security & Performance
+### 7.3 Security & Performance
 - [ ] Rate limiting (per user, per IP)
 - [ ] Input validation (Zod schemas)
 - [ ] SQL injection prevention
@@ -266,9 +266,9 @@ Transform the ad assets generator into a full-featured SAAS platform with brutal
 
 ---
 
- Phase 8: Polish & Launch Prep
+## Phase 8: Polish & Launch Prep
 
- 8.1 UI/UX Polish
+### 8.1 UI/UX Polish
 - [ ] Review all pages for brutalist consistency
 - [ ] Responsive design testing (mobile, tablet, desktop)
 - [ ] Animation and micro-interactions
@@ -278,7 +278,7 @@ Transform the ad assets generator into a full-featured SAAS platform with brutal
 - [ ] Accessibility audit (WCAG AA)
 - [ ] Browser compatibility testing
 
- 8.2 Content & Marketing Pages
+### 8.2 Content & Marketing Pages
 - [ ] Landing page (brutalist hero, features, pricing)
 - [ ] Pricing page (credit packages, comparison table)
 - [ ] About page
@@ -288,7 +288,7 @@ Transform the ad assets generator into a full-featured SAAS platform with brutal
 - [ ] Contact page
 - [ ] Blog setup (optional)
 
- 8.3 Onboarding & Documentation
+### 8.3 Onboarding & Documentation
 - [ ] First-time user onboarding flow
 - [ ] Interactive product tour
 - [ ] Help documentation/knowledge base
@@ -296,7 +296,7 @@ Transform the ad assets generator into a full-featured SAAS platform with brutal
 - [ ] Tooltips and contextual help
 - [ ] Sample projects/templates
 
- 8.4 Testing & QA
+### 8.4 Testing & QA
 - [ ] Unit tests for critical functions
 - [ ] Integration tests for API routes
 - [ ] E2E tests for main user flows
@@ -305,7 +305,7 @@ Transform the ad assets generator into a full-featured SAAS platform with brutal
 - [ ] Security audit
 - [ ] Bug fixing sprint
 
- 8.5 Deployment & DevOps
+### 8.5 Deployment & DevOps
 - [ ] Set up production environment (Vercel/Railway/AWS)
 - [ ] Configure production database
 - [ ] Set up production Stripe account
@@ -318,16 +318,16 @@ Transform the ad assets generator into a full-featured SAAS platform with brutal
 
 ---
 
- Phase 9: Post-Launch
+## Phase 9: Post-Launch
 
- 9.1 Monitoring & Analytics
+### 9.1 Monitoring & Analytics
 - [ ] User analytics tracking
 - [ ] Conversion funnel tracking
 - [ ] Error monitoring
 - [ ] Performance monitoring
 - [ ] User feedback collection
 
- 9.2 Iteration & Growth
+### 9.2 Iteration & Growth
 - [ ] User feedback analysis
 - [ ] Feature prioritization based on usage
 - [ ] A/B testing for conversion optimization
@@ -336,9 +336,9 @@ Transform the ad assets generator into a full-featured SAAS platform with brutal
 
 ---
 
- Technical Stack Summary
+## Technical Stack Summary
 
- Frontend
+### Frontend
 - Next.js 14 (App Router)
 - React 18
 - TypeScript
@@ -347,7 +347,7 @@ Transform the ad assets generator into a full-featured SAAS platform with brutal
 - Framer Motion (animations)
 - Zustand/Jotai (state management - optional)
 
- Backend
+### Backend
 - Next.js API Routes
 - Prisma ORM
 - PostgreSQL
@@ -356,7 +356,7 @@ Transform the ad assets generator into a full-featured SAAS platform with brutal
 - fal.ai SDK
 - Bull Queue (background jobs)
 
- Infrastructure
+### Infrastructure
 - Vercel (hosting)
 - PostgreSQL (Supabase/Neon/Railway)
 - S3/Cloudflare R2 (asset storage)
@@ -366,7 +366,7 @@ Transform the ad assets generator into a full-featured SAAS platform with brutal
 
 ---
 
- Success Metrics for v1.0
+## Success Metrics for v1.0
 
 - [ ] User registration flow works smoothly
 - [ ] Credit purchase and deduction works correctly
@@ -379,7 +379,7 @@ Transform the ad assets generator into a full-featured SAAS platform with brutal
 
 ---
 
- Timeline Estimate (Single Developer)
+## Timeline Estimate (Single Developer)
 
 - **Phase 1**: 1 week
 - **Phase 2**: 2 weeks
@@ -395,9 +395,9 @@ Transform the ad assets generator into a full-featured SAAS platform with brutal
 
 ---
 
- Priority for v1.0 MVP
+## Priority for v1.0 MVP
 
- Must Have (P0)
+### Must Have (P0)
 - Authentication system
 - Credit system with payment
 - Brutalist design implementation
@@ -405,13 +405,13 @@ Transform the ad assets generator into a full-featured SAAS platform with brutal
 - Project organization
 - Asset generation (existing features)
 
- Should Have (P1)
+### Should Have (P1)
 - User profile management
 - Asset management improvements
 - Admin panel basics
 - Email notifications
 
- Nice to Have (P2)
+### Nice to Have (P2)
 - Advanced analytics
 - Collaboration features
 - API access
@@ -419,7 +419,7 @@ Transform the ad assets generator into a full-featured SAAS platform with brutal
 
 ---
 
- Notes
+## Notes
 
 - Start with Phase 1-3 as foundation
 - Brutalist design should be bold, unapologetic, and memorable
