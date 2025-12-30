@@ -59,9 +59,9 @@ Transform the ad assets generator into a full-featured SAAS platform with brutal
 - [x] Input fields with chunky borders
 - [x] Card components with stark borders and shadows
 - [x] Navigation components (aggressive, geometric)
-- [ ] Modal/Dialog components
-- [ ] Toast notifications (stark, bold)
-- [ ] Loading states (geometric spinners, bold progress bars)
+- [x] Modal/Dialog components
+- [x] Toast notifications (stark, bold)
+- [x] Loading states (geometric spinners, bold progress bars)
 - [ ] Badge components (sharp, high-contrast)
 - [ ] Table components (grid-heavy, stark lines)
 
@@ -135,12 +135,12 @@ Transform the ad assets generator into a full-featured SAAS platform with brutal
   - Avatar upload
   - Name, email editing
   - Bio/company info
-- [ ] Account settings
+- [x] Account settings
   - Password change
-  - Email preferences
-  - Notification settings
+  - Email preferences (UI ready)
+  - Notification settings (UI ready)
 - [ ] API key management (store user's fal.ai key securely)
-- [ ] Account deletion flow
+- [x] Account deletion flow
 - [ ] Export user data (GDPR compliance)
 
 ### 4.3 Admin Panel (Basic)

@@ -20,7 +20,7 @@ const DialogPortal = ({
   ...props
 }: DialogPrimitive.DialogPortalProps) => (
   <DialogPrimitive.Portal {...props}>
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {children}
     </div>
   </DialogPrimitive.Portal>
@@ -34,7 +34,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay ref={ref} asChild {...props}>
     <motion.div
       className={cn(
-        "fixed inset-0 z-50 bg-black/80 backdrop-blur-sm",
+        "fixed inset-0 z-50 bg-background/80 backdrop-blur-sm",
         className
       )}
       initial={{ opacity: 0 }}
@@ -68,18 +68,21 @@ const DialogContent = React.forwardRef<
       <motion.div
         className={cn(
           "fixed z-50 grid w-full gap-4",
-          "border border-white/[0.08] bg-[#0a0a0a] p-6 shadow-2xl shadow-black/50",
+          // Brutalist styling
+          "border-4 border-foreground bg-card p-6",
+          "shadow-brutal",
           "sm:max-w-lg",
           className
         )}
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
         transition={{ duration: 0.15 }}
       >
         {children}
-        <DialogPrimitive.Close className="absolute right-4 top-4 text-white/40 hover:text-white/70 transition-colors duration-200 disabled:pointer-events-none">
+        <DialogPrimitive.Close className="absolute right-4 top-4 w-10 h-10 border-4 border-foreground flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors duration-150 disabled:pointer-events-none">
           <XMarkIcon className="w-5 h-5" />
+          <span className="sr-only">Close</span>
         </DialogPrimitive.Close>
       </motion.div>
     </DialogPrimitive.Content>
@@ -107,7 +110,7 @@ const DialogFooter = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-3 pt-4 border-t border-white/[0.06]",
+      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-3 pt-4 border-t-4 border-foreground/20",
       className
     )}
     {...props}
@@ -122,7 +125,7 @@ const DialogTitle = React.forwardRef<
   <DialogPrimitive.Title
     ref={ref}
     className={cn(
-      "text-lg font-semibold leading-none tracking-tight text-white",
+      "text-xl font-black uppercase tracking-tight text-foreground",
       className
     )}
     {...props}
@@ -136,7 +139,7 @@ const DialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn("text-sm text-white/50", className)}
+    className={cn("text-sm text-muted-foreground", className)}
     {...props}
   />
 ));
