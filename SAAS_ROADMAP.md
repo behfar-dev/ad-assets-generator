@@ -94,13 +94,13 @@ Transform the ad assets generator into a full-featured SAAS platform with brutal
   - Enterprise: Custom pricing
 - [x] Implement credit balance tracking
 - [x] Create credit transaction logging
-- [ ] Add credit deduction logic to generation functions
-- [ ] Implement credit refund logic (for failed generations)
+- [x] Add credit deduction logic to generation functions
+- [x] Implement credit refund logic (for failed generations)
 
 ### 3.2 Credit UI Components
 - [x] Credit balance display (header/dashboard)
 - [x] Credit usage history page
-- [ ] Low credit warning notifications
+- [x] Low credit warning notifications
 - [x] Credit purchase modal/page
 - [x] Credit transaction detail view
 - [ ] Credit analytics (usage over time)
@@ -238,11 +238,11 @@ Transform the ad assets generator into a full-featured SAAS platform with brutal
 - [x] `/api/credits/history` - GET transaction history
 - [x] `/api/projects` - CRUD operations
 - [x] `/api/projects/[id]` - GET/PATCH/DELETE project
-- [ ] `/api/assets` - GET user assets
-- [ ] `/api/assets/[id]` - GET/DELETE specific asset
-- [ ] `/api/generate/image` - POST image generation
-- [ ] `/api/generate/video` - POST video generation
-- [ ] `/api/generate/copy` - POST ad copy generation
+- [x] `/api/assets` - GET user assets
+- [x] `/api/assets/[id]` - GET/DELETE specific asset
+- [x] `/api/generate/image` - POST image generation
+- [x] `/api/generate/video` - POST video generation
+- [x] `/api/generate/copy` - POST ad copy generation
 - [x] `/api/webhooks/stripe` - POST Stripe webhooks
 
 ### 7.2 Backend Services
