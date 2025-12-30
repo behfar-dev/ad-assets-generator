@@ -62,8 +62,8 @@ Transform the ad assets generator into a full-featured SAAS platform with brutal
 - [x] Modal/Dialog components
 - [x] Toast notifications (stark, bold)
 - [x] Loading states (geometric spinners, bold progress bars)
-- [ ] Badge components (sharp, high-contrast)
-- [ ] Table components (grid-heavy, stark lines)
+- [x] Badge components (sharp, high-contrast)
+- [x] Table components (grid-heavy, stark lines)
 
 ### 2.3 Layout Redesign
 - [x] Create brutalist header/navigation
