@@ -8,6 +8,7 @@ import {
   refundCredits,
   CREDIT_COSTS,
 } from "@/lib/credits";
+import { uploadJsonToStorage } from "@/lib/supabase";
 
 interface AdCopy {
   headline: string;
@@ -31,6 +32,7 @@ export async function POST(request: NextRequest) {
       tone = "professional",
       platform = "general",
       count = 3,
+      projectId,
     } = await request.json();
 
     if (!productName || !productDescription) {
@@ -38,6 +40,23 @@ export async function POST(request: NextRequest) {
         { error: "Product name and description are required" },
         { status: 400 }
       );
+    }
+
+    // Verify project belongs to user if provided
+    if (projectId) {
+      const project = await prisma.project.findFirst({
+        where: {
+          id: projectId,
+          userId: session.user.id,
+        },
+      });
+
+      if (!project) {
+        return NextResponse.json(
+          { error: "Project not found" },
+          { status: 404 }
+        );
+      }
     }
 
     // Calculate total credits needed
@@ -79,9 +98,9 @@ export async function POST(request: NextRequest) {
     const job = await prisma.generationJob.create({
       data: {
         userId: session.user.id,
-        type: "AD_COPY",
+        type: "COPY",
         status: "PENDING",
-        inputData: {
+        settings: {
           productName,
           productDescription,
           targetAudience,
@@ -111,12 +130,54 @@ export async function POST(request: NextRequest) {
         socialCaption: `Check out ${productName}! Perfect for ${targetAudience || "everyone"}. #ad #${productName.replace(/\s+/g, "")}`,
       }));
 
+      // Save each copy to Supabase storage and create Asset records
+      const createdAssets = await Promise.all(
+        generatedCopy.map(async (copy, index) => {
+          try {
+            // Create a unique path for this copy
+            const timestamp = Date.now();
+            const storagePath = `ad-copy/${session.user.id}/${job.id}-${index}-${timestamp}.json`;
+
+            // Upload to Supabase storage
+            const url = await uploadJsonToStorage("ad-copy", storagePath, copy);
+
+            // Create Asset record in database
+            const asset = await prisma.asset.create({
+              data: {
+                userId: session.user.id,
+                projectId: projectId || null,
+                type: "COPY",
+                aspectRatio: "1:1", // Default aspect ratio for copy
+                url,
+                prompt: `${productName}: ${productDescription}`,
+                settings: {
+                  tone,
+                  platform,
+                  targetAudience,
+                  productName,
+                  productDescription,
+                  copy,
+                },
+              },
+            });
+
+            return asset;
+          } catch (error) {
+            console.error("Failed to save copy asset:", error);
+            return null;
+          }
+        })
+      );
+
+      // Filter out any failed uploads
+      const successfulAssets = createdAssets.filter((asset) => asset !== null);
+
       // Update job status
       await prisma.generationJob.update({
         where: { id: job.id },
         data: {
           status: "COMPLETED",
-          outputData: { copies: generatedCopy },
+          result: { copies: generatedCopy, assets: successfulAssets } as any,
         },
       });
 
@@ -124,6 +185,7 @@ export async function POST(request: NextRequest) {
         success: true,
         jobId: job.id,
         copies: generatedCopy,
+        assets: successfulAssets,
         creditsUsed: totalCredits,
         metadata: {
           tone,

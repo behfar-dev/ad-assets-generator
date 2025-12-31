@@ -37,6 +37,8 @@ export async function deductCredits(
   type: "IMAGE_GENERATION" | "VIDEO_GENERATION" | "AD_COPY_GENERATION",
   description?: string
 ): Promise<{ newBalance: number; transactionId: string }> {
+  // Map generation types to Prisma CreditTransactionType
+  const transactionType: "USAGE" = "USAGE";
   // Use a transaction to ensure atomicity
   const result = await prisma.$transaction(async (tx) => {
     // Get current balance with lock
@@ -67,7 +69,7 @@ export async function deductCredits(
       data: {
         userId,
         amount: -amount,
-        type,
+        type: transactionType,
         description: description || `${type.replace("_", " ").toLowerCase()}`,
       },
     });

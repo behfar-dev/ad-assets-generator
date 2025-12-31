@@ -26,7 +26,7 @@ export function ApiKeyStatus() {
 
   if (hasUserKey) {
     return (
-      <Badge variant="success" background="alpha" size="xs" className="gap-1">
+      <Badge variant="success" size="xs" className="gap-1">
         <CheckIcon className="h-3 w-3" />
         API Key Active
       </Badge>
@@ -34,7 +34,7 @@ export function ApiKeyStatus() {
   }
 
   return (
-    <Badge variant="warning" background="alpha" size="xs" className="gap-1">
+    <Badge variant="warning" size="xs" className="gap-1">
       <KeyIcon className="h-3 w-3" />
       Rate Limited
     </Badge>
@@ -81,7 +81,7 @@ export function ApiKeyDialog() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-white/60">Your API Key</span>
-                <Badge variant="success" background="alpha" size="xs">
+                <Badge variant="success" size="xs">
                   Active
                 </Badge>
               </div>
@@ -184,7 +184,7 @@ export function QuickApiKeyPopover() {
           <div className="flex items-center justify-between">
             <span className="font-medium text-sm text-white">API Key</span>
             {hasUserKey && (
-              <Badge variant="success" background="alpha" size="xs">
+              <Badge variant="success" size="xs">
                 Active
               </Badge>
             )}

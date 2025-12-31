@@ -57,7 +57,7 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const { projectId, metadata, isFavorite } = await request.json();
+    const { projectId, settings, metadata, isFavorite } = await request.json();
 
     // Verify asset belongs to user
     const existingAsset = await prisma.asset.findFirst({
@@ -95,19 +95,17 @@ export async function PATCH(
       updateData.projectId = projectId;
     }
 
-    if (metadata !== undefined) {
-      updateData.metadata = {
-        ...(existingAsset.metadata as object),
-        ...metadata,
+    // Use settings, fallback to metadata for backward compatibility
+    const settingsToUpdate = settings || metadata;
+    if (settingsToUpdate !== undefined) {
+      updateData.settings = {
+        ...(existingAsset.settings as object || {}),
+        ...settingsToUpdate,
       };
     }
 
     if (isFavorite !== undefined) {
-      updateData.metadata = {
-        ...(existingAsset.metadata as object),
-        ...(updateData.metadata as object || {}),
-        isFavorite,
-      };
+      updateData.isFavorite = isFavorite;
     }
 
     const asset = await prisma.asset.update({

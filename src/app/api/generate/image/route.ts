@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
         userId: session.user.id,
         type: "IMAGE",
         status: "PENDING",
-        inputData: {
+        settings: {
           imageUrl,
           prompt,
           aspectRatio,
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
               aspectRatio: gen.aspectRatio,
               url: gen.url,
               prompt: prompt || null,
-              metadata: {
+              settings: {
                 sourceImage: imageUrl,
                 generationJobId: job.id,
               },
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
         where: { id: job.id },
         data: {
           status: "COMPLETED",
-          outputData: { assetIds: assets.map((a) => a.id) },
+          result: { assetIds: assets.map((a) => a.id) },
         },
       });
 

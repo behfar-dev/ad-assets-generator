@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { type, aspectRatio, url, prompt, projectId, metadata } =
+    const { type, aspectRatio, url, prompt, projectId, settings, metadata } =
       await request.json();
 
     if (!type || !aspectRatio || !url) {
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
         aspectRatio,
         url,
         prompt: prompt || null,
-        metadata: metadata || {},
+        settings: settings || metadata || null, // Use settings, fallback to metadata for backward compatibility
       },
       include: {
         project: {
