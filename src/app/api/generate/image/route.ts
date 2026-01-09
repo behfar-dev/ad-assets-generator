@@ -14,13 +14,14 @@ import {
 } from "@/lib/creative-direction";
 import { generateImageSchema, validateRequest } from "@/lib/validations";
 import { checkApiRateLimit } from "@/lib/rate-limit";
+import { Errors, handleError, ErrorCode } from "@/lib/errors";
 
 // POST /api/generate/image - Generate image ad creative
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return Errors.unauthorized();
     }
 
     // Check rate limit
@@ -54,14 +55,7 @@ export async function POST(request: NextRequest) {
     );
 
     if (!hasEnough) {
-      return NextResponse.json(
-        {
-          error: "Insufficient credits",
-          required: totalCredits,
-          available: balance,
-        },
-        { status: 402 }
-      );
+      return Errors.insufficientCredits(totalCredits, balance);
     }
 
     // Verify project belongs to user if provided
@@ -74,10 +68,7 @@ export async function POST(request: NextRequest) {
       });
 
       if (!project) {
-        return NextResponse.json(
-          { error: "Project not found" },
-          { status: 404 }
-        );
+        return Errors.notFound("Project");
       }
     }
 
@@ -91,11 +82,9 @@ export async function POST(request: NextRequest) {
         `Generated ${count} image${count > 1 ? "s" : ""} (${aspectRatio || "1:1"})`
       );
       transactionId = result.transactionId;
-    } catch {
-      return NextResponse.json(
-        { error: "Failed to deduct credits" },
-        { status: 500 }
-      );
+    } catch (error) {
+      console.error("Credit deduction error:", error);
+      return Errors.internalError("Failed to process credits. Please try again.");
     }
 
     // Create a generation job for tracking
@@ -190,16 +179,12 @@ export async function POST(request: NextRequest) {
       });
 
       console.error("Image generation error:", generationError);
-      return NextResponse.json(
-        { error: "Image generation failed. Credits have been refunded." },
-        { status: 500 }
+      return Errors.generationFailed(
+        "Image generation failed. Your credits have been refunded."
       );
     }
   } catch (error) {
     console.error("Generate image error:", error);
-    return NextResponse.json(
-      { error: "Failed to process request" },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }

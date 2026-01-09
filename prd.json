@@ -51,9 +51,11 @@
         "Test with account that has 0 credits",
         "Verify no external API calls made when credits insufficient"
       ],
-      "passes": false,
+      "passes": true,
       "priority": "P0",
-      "estimatedComplexity": "low"
+      "estimatedComplexity": "low",
+      "completedAt": "2026-01-09",
+      "notes": "Already implemented - all generation routes check/deduct credits before API calls, return 402 on insufficient balance"
     },
     {
       "id": "GEN-002",
@@ -83,9 +85,11 @@
         "Test error handling with various failure scenarios",
         "Verify credits refunded on failure"
       ],
-      "passes": false,
+      "passes": true,
       "priority": "P0",
-      "estimatedComplexity": "medium"
+      "estimatedComplexity": "medium",
+      "completedAt": "2026-01-09",
+      "notes": "Created src/lib/errors.ts with ErrorCode enum, user-friendly messages, and Errors helpers. Updated all generation routes."
     },
     {
       "id": "UI-001",

@@ -67,3 +67,33 @@ Each completed task should be logged with:
 - Used in-memory token bucket (can upgrade to Redis later)
 - Rate limit by user ID for authenticated requests, IP for anonymous
 - Conservative limits for generation (expensive), relaxed for reads
+
+---
+
+### Iteration 3 - GEN-001: Credit check before generation
+**Status:** Already implemented (verified existing)
+**Notes:** All generation routes already check balance with checkCreditBalance and deduct credits before API calls, returning 402 on insufficient balance.
+
+---
+
+### Iteration 4 - GEN-003: Better error handling
+**Status:** Completed
+**Task:** Better error handling and user feedback for generation failures
+
+**Changes:**
+- Created `src/lib/errors.ts` with standardized error handling:
+  - ErrorCode enum with all error types
+  - User-friendly error messages for each code
+  - AppError class for throwing typed errors
+  - createErrorResponse helper for consistent API responses
+  - handleError for catching unexpected errors
+  - Errors object with specific creators (unauthorized, notFound, etc.)
+- Updated generation routes to use new error handling:
+  - `/api/generate/image` - uses Errors.* helpers
+  - `/api/generate/video` - uses Errors.* helpers
+  - `/api/generate/copy` - uses Errors.* helpers
+
+**Decisions:**
+- Consistent error response format with code, message, details, timestamp
+- HTTP status codes mapped to error types
+- Dev mode exposes error details, prod hides them

@@ -16,6 +16,7 @@ import {
 } from "@/lib/creative-direction";
 import { generateCopySchema, validateRequest } from "@/lib/validations";
 import { checkApiRateLimit } from "@/lib/rate-limit";
+import { Errors, handleError } from "@/lib/errors";
 
 interface AdCopy {
   headline: string;
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return Errors.unauthorized();
     }
 
     // Check rate limit
@@ -65,10 +66,7 @@ export async function POST(request: NextRequest) {
       });
 
       if (!project) {
-        return NextResponse.json(
-          { error: "Project not found" },
-          { status: 404 }
-        );
+        return Errors.notFound("Project");
       }
     }
 
@@ -82,14 +80,7 @@ export async function POST(request: NextRequest) {
     );
 
     if (!hasEnough) {
-      return NextResponse.json(
-        {
-          error: "Insufficient credits",
-          required: totalCredits,
-          available: balance,
-        },
-        { status: 402 }
-      );
+      return Errors.insufficientCredits(totalCredits, balance);
     }
 
     // Deduct credits before generation
@@ -100,11 +91,9 @@ export async function POST(request: NextRequest) {
         "AD_COPY_GENERATION",
         `Generated ${count} ad copy variation${count > 1 ? "s" : ""}`
       );
-    } catch {
-      return NextResponse.json(
-        { error: "Failed to deduct credits" },
-        { status: 500 }
-      );
+    } catch (error) {
+      console.error("Credit deduction error:", error);
+      return Errors.internalError("Failed to process credits. Please try again.");
     }
 
     // Create a generation job for tracking
@@ -233,16 +222,12 @@ export async function POST(request: NextRequest) {
       });
 
       console.error("Ad copy generation error:", generationError);
-      return NextResponse.json(
-        { error: "Ad copy generation failed. Credits have been refunded." },
-        { status: 500 }
+      return Errors.generationFailed(
+        "Ad copy generation failed. Your credits have been refunded."
       );
     }
   } catch (error) {
     console.error("Generate copy error:", error);
-    return NextResponse.json(
-      { error: "Failed to process request" },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }
