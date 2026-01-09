@@ -187,3 +187,38 @@ Each completed task should be logged with:
 **Files changed:**
 - `src/app/(legal)/layout.tsx` (new)
 - `src/app/(legal)/terms/page.tsx` (new)
+
+---
+
+### Iteration 8 - LEGAL-002: Privacy Policy page
+**Status:** Completed
+**Task:** Create Privacy Policy page with GDPR compliance
+
+**Changes:**
+- Created `src/app/(legal)/privacy/page.tsx` - Comprehensive Privacy Policy
+
+**Privacy Policy Sections:**
+1. Information We Collect (provided, automatic, third-party)
+2. How We Use Your Information (7 purposes)
+3. How We Share Your Information (service providers, legal, business transfers)
+4. Data Retention (account lifecycle, deletion)
+5. Data Security (encryption, hashing, access controls)
+6. Your Rights - GDPR rights (access, rectification, erasure, portability, object, withdraw consent)
+7. Cookies and Tracking (essential, functional, analytics)
+8. International Data Transfers
+9. Children's Privacy (18+ only)
+10. Third-Party Links
+11. Changes to Policy
+12. Contact Us
+13. Legal Basis for Processing (GDPR: contract, legitimate interests, consent, legal obligation)
+
+**Decisions:**
+- Followed same brutalist design pattern as Terms of Service
+- Added GDPR-specific sections (rights, legal basis, data transfers)
+- Cookie policy integrated into main privacy policy
+- Added links to Terms and Dashboard at bottom for navigation
+- Privacy-specific contact email (privacy@adassets.io)
+- Grid layout for user rights section for visual clarity
+
+**Files changed:**
+- `src/app/(legal)/privacy/page.tsx` (new)
