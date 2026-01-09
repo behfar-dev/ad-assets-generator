@@ -383,9 +383,11 @@
         "Add preview deployments for pull requests",
         "Test full CI/CD flow with dummy commit"
       ],
-      "passes": false,
+      "passes": true,
       "priority": "P0",
-      "estimatedComplexity": "medium"
+      "estimatedComplexity": "medium",
+      "completedAt": "2026-01-09",
+      "notes": "Created .github/workflows/ci.yml with lint, typecheck, and build jobs. Vercel handles deployments."
     },
     {
       "id": "INFRA-002",

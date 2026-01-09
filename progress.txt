@@ -97,3 +97,22 @@ Each completed task should be logged with:
 - Consistent error response format with code, message, details, timestamp
 - HTTP status codes mapped to error types
 - Dev mode exposes error details, prod hides them
+
+---
+
+### Iteration 5 - INFRA-001: CI/CD pipeline
+**Status:** Completed
+**Task:** Set up CI/CD pipeline for automated deployments
+
+**Changes:**
+- Created `.github/workflows/ci.yml` with:
+  - lint-and-typecheck job: runs typecheck and lint
+  - build job: installs deps, generates Prisma client, builds app
+  - Triggered on push/PR to main and Development branches
+  - Uses Node.js 22, npm caching for speed
+  - Test job commented out (ready when tests added)
+
+**Notes:**
+- Vercel handles automatic deployments via GitHub integration
+- CI pipeline validates code quality before merge
+- Uses --legacy-peer-deps for npm due to version conflicts
