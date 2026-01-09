@@ -43,3 +43,27 @@ Each completed task should be logged with:
 - Fixed JSON type casting in copy/route.ts and extract-brand/route.ts
 - Fixed iterator in brand-extraction.ts
 - Installed zod, eslint@8, eslint-config-next@14.2.0
+
+---
+
+### Iteration 2 - SEC-002: Rate limiting for API endpoints
+**Status:** Completed
+**Task:** Add rate limiting to all API endpoints
+
+**Changes:**
+- Created `src/lib/rate-limit/index.ts` with token bucket rate limiter:
+  - In-memory store with automatic cleanup
+  - Predefined limits: GENERATION (10/min), WRITE (30/min), READ (100/min), AUTH (5/min)
+  - Rate limit headers (X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset)
+  - 429 response with Retry-After header
+- Updated API routes with rate limiting:
+  - `/api/generate/image` - GENERATION limit
+  - `/api/generate/video` - GENERATION limit
+  - `/api/generate/copy` - GENERATION limit
+  - `/api/projects` GET - READ limit
+  - `/api/projects` POST - WRITE limit
+
+**Decisions:**
+- Used in-memory token bucket (can upgrade to Redis later)
+- Rate limit by user ID for authenticated requests, IP for anonymous
+- Conservative limits for generation (expensive), relaxed for reads

@@ -15,6 +15,7 @@ import {
   type CreativeDirectionId,
 } from "@/lib/creative-direction";
 import { generateCopySchema, validateRequest } from "@/lib/validations";
+import { checkApiRateLimit } from "@/lib/rate-limit";
 
 interface AdCopy {
   headline: string;
@@ -29,6 +30,12 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check rate limit
+    const rateLimitResult = checkApiRateLimit(request, "GENERATION", session.user.id);
+    if (!rateLimitResult.allowed) {
+      return rateLimitResult.response;
     }
 
     const body = await request.json();
@@ -192,18 +199,21 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      return NextResponse.json({
-        success: true,
-        jobId: job.id,
-        copies: generatedCopy,
-        assets: successfulAssets,
-        creditsUsed: totalCredits,
-        metadata: {
-          tone,
-          platform,
-          targetAudience,
+      return NextResponse.json(
+        {
+          success: true,
+          jobId: job.id,
+          copies: generatedCopy,
+          assets: successfulAssets,
+          creditsUsed: totalCredits,
+          metadata: {
+            tone,
+            platform,
+            targetAudience,
+          },
         },
-      });
+        { headers: rateLimitResult.headers }
+      );
     } catch (generationError) {
       // Generation failed, refund credits
       await refundCredits(

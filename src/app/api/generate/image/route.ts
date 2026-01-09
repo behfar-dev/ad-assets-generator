@@ -13,6 +13,7 @@ import {
   buildImageGenerationPrompt,
 } from "@/lib/creative-direction";
 import { generateImageSchema, validateRequest } from "@/lib/validations";
+import { checkApiRateLimit } from "@/lib/rate-limit";
 
 // POST /api/generate/image - Generate image ad creative
 export async function POST(request: NextRequest) {
@@ -20,6 +21,12 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check rate limit
+    const rateLimitResult = checkApiRateLimit(request, "GENERATION", session.user.id);
+    if (!rateLimitResult.allowed) {
+      return rateLimitResult.response;
     }
 
     const body = await request.json();
@@ -155,12 +162,15 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      return NextResponse.json({
-        success: true,
-        jobId: job.id,
-        assets,
-        creditsUsed: totalCredits,
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          jobId: job.id,
+          assets,
+          creditsUsed: totalCredits,
+        },
+        { headers: rateLimitResult.headers }
+      );
     } catch (generationError) {
       // Generation failed, refund credits
       await refundCredits(

@@ -33,9 +33,11 @@
         "Test rate limiting with concurrent requests",
         "Verify 429 status returned when limit exceeded"
       ],
-      "passes": false,
+      "passes": true,
       "priority": "P0",
-      "estimatedComplexity": "medium"
+      "estimatedComplexity": "medium",
+      "completedAt": "2026-01-09",
+      "notes": "Implemented token bucket rate limiter in src/lib/rate-limit with per-user limits"
     },
     {
       "id": "GEN-001",

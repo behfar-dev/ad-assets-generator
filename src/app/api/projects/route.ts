@@ -7,6 +7,7 @@ import {
   paginationSchema,
   validateRequest,
 } from "@/lib/validations";
+import { checkApiRateLimit } from "@/lib/rate-limit";
 
 // GET /api/projects - Get user's projects
 export async function GET(request: NextRequest) {
@@ -15,6 +16,12 @@ export async function GET(request: NextRequest) {
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check rate limit
+    const rateLimitResult = checkApiRateLimit(request, "READ", session.user.id);
+    if (!rateLimitResult.allowed) {
+      return rateLimitResult.response;
     }
 
     const { searchParams } = new URL(request.url);
@@ -74,6 +81,12 @@ export async function POST(request: NextRequest) {
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check rate limit
+    const rateLimitResult = checkApiRateLimit(request, "WRITE", session.user.id);
+    if (!rateLimitResult.allowed) {
+      return rateLimitResult.response;
     }
 
     const body = await request.json();
