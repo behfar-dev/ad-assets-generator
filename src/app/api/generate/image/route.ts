@@ -15,6 +15,7 @@ import {
 import { generateImageSchema, validateRequest } from "@/lib/validations";
 import { checkApiRateLimit } from "@/lib/rate-limit";
 import { Errors, handleError, ErrorCode } from "@/lib/errors";
+import { retryAsync } from "@/lib/retry";
 
 // POST /api/generate/image - Generate image ad creative
 export async function POST(request: NextRequest) {
@@ -104,20 +105,37 @@ export async function POST(request: NextRequest) {
     });
 
     try {
-      // TODO: Integrate with fal.ai or other image generation API
-      // For now, simulate generation with placeholder
-      // In production, this would call the AI service:
-      //
-      // const fal = require("@fal-ai/client");
-      // const result = await fal.subscribe("fal-ai/flux/dev", {
-      //   input: { prompt, image_url: imageUrl },
-      // });
+      // Generate images with retry logic for transient failures
+      // The retryAsync wrapper will retry up to 3 times with exponential backoff
+      // for network errors, timeouts, and 5xx responses
+      const generatedUrls = await retryAsync(
+        async () => {
+          // TODO: Integrate with fal.ai or other image generation API
+          // In production, this would call the AI service:
+          //
+          // const fal = require("@fal-ai/client");
+          // const result = await fal.subscribe("fal-ai/flux/dev", {
+          //   input: { prompt, image_url: imageUrl },
+          // });
+          // return result.images.map(img => ({ url: img.url, aspectRatio }));
 
-      // Simulate generated URLs (replace with actual API call)
-      const generatedUrls = Array.from({ length: count }, (_, i) => ({
-        url: `https://placeholder.com/generated-${job.id}-${i}.jpg`,
-        aspectRatio: aspectRatio || "1:1",
-      }));
+          // Simulate generated URLs (replace with actual API call)
+          return Array.from({ length: count }, (_, i) => ({
+            url: `https://placeholder.com/generated-${job.id}-${i}.jpg`,
+            aspectRatio: aspectRatio || "1:1",
+          }));
+        },
+        {
+          maxRetries: 3,
+          initialDelayMs: 2000,
+          onRetry: (error, attempt, delayMs) => {
+            console.log(
+              `[Image Generation] Retry ${attempt}/3 after ${delayMs}ms:`,
+              error instanceof Error ? error.message : error
+            );
+          },
+        }
+      );
 
       // Create assets for each generated image
       const assets = await Promise.all(

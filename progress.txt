@@ -116,3 +116,38 @@ Each completed task should be logged with:
 - Vercel handles automatic deployments via GitHub integration
 - CI pipeline validates code quality before merge
 - Uses --legacy-peer-deps for npm due to version conflicts
+
+---
+
+### Iteration 6 - GEN-002: Retry logic for failed generation requests
+**Status:** Completed
+**Task:** Implement retry logic for failed generation requests
+
+**Changes:**
+- Created `src/lib/retry.ts` with comprehensive retry utilities:
+  - `withRetry` - Main retry function returning result object with metadata
+  - `retryAsync` - Simplified wrapper that throws on final failure
+  - `createRetryWrapper` - Factory for creating reusable retry configurations
+  - Exponential backoff with configurable multiplier (default 2x)
+  - Optional jitter to prevent thundering herd
+  - Configurable `isRetryable` function for custom retry logic
+  - `onRetry` callback for logging/monitoring
+  - Default detection of retryable errors (5xx, timeouts, network errors)
+
+- Updated generation routes to use retry logic:
+  - `/api/generate/image` - 3 retries, 2s initial delay, 30s max
+  - `/api/generate/video` - 3 retries, 3s initial delay, 60s max (videos take longer)
+  - `/api/generate/copy` - 3 retries, 1s initial delay, 15s max (OpenAI is fast)
+
+**Decisions:**
+- Created standalone retry module rather than extending utils.ts (better separation)
+- Different delay configurations per generation type based on API characteristics
+- Default retry on 408, 429, 500-504 status codes and common network errors
+- Jitter enabled by default to prevent synchronized retries across users
+- Logging on each retry attempt for debugging
+
+**Files changed:**
+- `src/lib/retry.ts` (new)
+- `src/app/api/generate/image/route.ts`
+- `src/app/api/generate/video/route.ts`
+- `src/app/api/generate/copy/route.ts`

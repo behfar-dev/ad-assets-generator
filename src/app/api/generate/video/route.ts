@@ -15,6 +15,7 @@ import {
 import { generateVideoSchema, validateRequest } from "@/lib/validations";
 import { checkApiRateLimit } from "@/lib/rate-limit";
 import { Errors, handleError } from "@/lib/errors";
+import { retryAsync } from "@/lib/retry";
 
 // POST /api/generate/video - Generate video ad creative
 export async function POST(request: NextRequest) {
@@ -106,21 +107,38 @@ export async function POST(request: NextRequest) {
     });
 
     try {
-      // TODO: Integrate with fal.ai video generation API
-      // For now, simulate generation with placeholder
-      // In production, this would call the AI service:
-      //
-      // const fal = require("@fal-ai/client");
-      // const result = await fal.subscribe("fal-ai/runway-gen2", {
-      //   input: { prompt, image_url: imageUrl },
-      // });
+      // Generate videos with retry logic for transient failures
+      // Video generation can be slower, so we use longer delays
+      const generatedUrls = await retryAsync(
+        async () => {
+          // TODO: Integrate with fal.ai video generation API
+          // In production, this would call the AI service:
+          //
+          // const fal = require("@fal-ai/client");
+          // const result = await fal.subscribe("fal-ai/runway-gen2", {
+          //   input: { prompt, image_url: imageUrl },
+          // });
+          // return result.videos.map(vid => ({ url: vid.url, aspectRatio, duration }));
 
-      // Simulate generated URLs (replace with actual API call)
-      const generatedUrls = Array.from({ length: count }, (_, i) => ({
-        url: `https://placeholder.com/generated-${job.id}-${i}.mp4`,
-        aspectRatio,
-        duration,
-      }));
+          // Simulate generated URLs (replace with actual API call)
+          return Array.from({ length: count }, (_, i) => ({
+            url: `https://placeholder.com/generated-${job.id}-${i}.mp4`,
+            aspectRatio,
+            duration,
+          }));
+        },
+        {
+          maxRetries: 3,
+          initialDelayMs: 3000, // Longer initial delay for video APIs
+          maxDelayMs: 60000, // Allow up to 60s between retries for video
+          onRetry: (error, attempt, delayMs) => {
+            console.log(
+              `[Video Generation] Retry ${attempt}/3 after ${delayMs}ms:`,
+              error instanceof Error ? error.message : error
+            );
+          },
+        }
+      );
 
       // Create assets for each generated video
       const assets = await Promise.all(

@@ -17,6 +17,7 @@ import {
 import { generateCopySchema, validateRequest } from "@/lib/validations";
 import { checkApiRateLimit } from "@/lib/rate-limit";
 import { Errors, handleError } from "@/lib/errors";
+import { retryAsync } from "@/lib/retry";
 
 interface AdCopy {
   headline: string;
@@ -115,26 +116,44 @@ export async function POST(request: NextRequest) {
     });
 
     try {
-      // TODO: Integrate with OpenAI or Claude API for copy generation
-      // For now, generate placeholder copy
-      // In production, this would call the AI service:
-      //
-      // const openai = new OpenAI();
-      // const response = await openai.chat.completions.create({
-      //   model: "gpt-4",
-      //   messages: [{ role: "user", content: buildPrompt(...) }],
-      // });
-
-      // Generate placeholder copy (replace with actual AI generation)
+      // Generate copy with retry logic for transient failures
+      // OpenAI API calls are generally fast, but can timeout during high load
       const creativeDirection = getCreativeDirection(
         creativeDirectionId as CreativeDirectionId
       );
-      const generatedCopy: AdCopy[] = Array.from({ length: count }, (_, i) => ({
-        headline: `${productName} - Your Perfect Solution #${i + 1}`,
-        description: `Discover ${productName}. ${productDescription.substring(0, 100)}...`,
-        cta: ["Shop Now", "Learn More", "Get Started", "Try Free"][i % 4],
-        socialCaption: `(${creativeDirection.label}) Check out ${productName}! Perfect for ${targetAudience || "everyone"}. #ad #${productName.replace(/\s+/g, "")}`,
-      }));
+
+      const generatedCopy = await retryAsync<AdCopy[]>(
+        async () => {
+          // TODO: Integrate with OpenAI or Claude API for copy generation
+          // In production, this would call the AI service:
+          //
+          // const openai = new OpenAI();
+          // const response = await openai.chat.completions.create({
+          //   model: "gpt-4",
+          //   messages: [{ role: "user", content: buildPrompt(...) }],
+          // });
+          // return parseCopyFromResponse(response);
+
+          // Generate placeholder copy (replace with actual AI generation)
+          return Array.from({ length: count }, (_, i) => ({
+            headline: `${productName} - Your Perfect Solution #${i + 1}`,
+            description: `Discover ${productName}. ${productDescription.substring(0, 100)}...`,
+            cta: ["Shop Now", "Learn More", "Get Started", "Try Free"][i % 4],
+            socialCaption: `(${creativeDirection.label}) Check out ${productName}! Perfect for ${targetAudience || "everyone"}. #ad #${productName.replace(/\s+/g, "")}`,
+          }));
+        },
+        {
+          maxRetries: 3,
+          initialDelayMs: 1000, // OpenAI is generally fast
+          maxDelayMs: 15000,
+          onRetry: (error, attempt, delayMs) => {
+            console.log(
+              `[Copy Generation] Retry ${attempt}/3 after ${delayMs}ms:`,
+              error instanceof Error ? error.message : error
+            );
+          },
+        }
+      );
 
       // Save each copy to Supabase storage and create Asset records
       const createdAssets = await Promise.all(
