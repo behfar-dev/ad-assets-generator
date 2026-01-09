@@ -1,0 +1,514 @@
+{
+  "project": "Ad Assets Generator - SaaS Platform v1.0",
+  "version": "1.0",
+  "description": "Critical missing features to complete MVP based on SAAS_ROADMAP.md analysis",
+  "priority": "High priority items for production readiness",
+  "requirements": [
+    {
+      "id": "SEC-001",
+      "category": "security",
+      "description": "Implement input validation with Zod schemas across all API routes",
+      "steps": [
+        "Install zod package",
+        "Create Zod schemas for all API request bodies in src/lib/validations/",
+        "Add validation middleware to API routes: /api/generate/*, /api/projects/*, /api/user/*",
+        "Test validation with invalid inputs",
+        "Verify proper error messages returned to client"
+      ],
+      "passes": true,
+      "priority": "P0",
+      "estimatedComplexity": "medium",
+      "completedAt": "2026-01-09",
+      "notes": "Created comprehensive Zod schemas in src/lib/validations/ with validateRequest helper"
+    },
+    {
+      "id": "SEC-002",
+      "category": "security",
+      "description": "Add rate limiting to all API endpoints",
+      "steps": [
+        "Install rate limiting library (upstash/ratelimit or similar)",
+        "Create rate limiting middleware in src/middleware/",
+        "Apply rate limits: 10 req/min for generation, 100 req/min for reads",
+        "Add rate limit headers to responses",
+        "Test rate limiting with concurrent requests",
+        "Verify 429 status returned when limit exceeded"
+      ],
+      "passes": false,
+      "priority": "P0",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "GEN-001",
+      "category": "functional",
+      "description": "Add credit check before generation starts to prevent wasted API calls",
+      "steps": [
+        "Update /api/generate/image to check credits before calling fal.ai",
+        "Update /api/generate/video to check credits before calling Kling",
+        "Update /api/generate/copy to check credits before calling OpenAI",
+        "Return clear error message if insufficient credits",
+        "Test with account that has 0 credits",
+        "Verify no external API calls made when credits insufficient"
+      ],
+      "passes": false,
+      "priority": "P0",
+      "estimatedComplexity": "low"
+    },
+    {
+      "id": "GEN-002",
+      "category": "functional",
+      "description": "Implement retry logic for failed generation requests",
+      "steps": [
+        "Add retry wrapper function in src/lib/utils.ts with exponential backoff",
+        "Apply retry logic to fal.ai image generation (max 3 retries)",
+        "Apply retry logic to Kling video generation (max 3 retries)",
+        "Apply retry logic to OpenAI copy generation (max 3 retries)",
+        "Log retry attempts for debugging",
+        "Test with network failures and API errors"
+      ],
+      "passes": false,
+      "priority": "P1",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "GEN-003",
+      "category": "functional",
+      "description": "Better error handling and user feedback for generation failures",
+      "steps": [
+        "Create standardized error response format in src/lib/errors.ts",
+        "Add specific error messages for different failure types (API error, timeout, invalid input)",
+        "Update generation API routes to return user-friendly error messages",
+        "Add error toast notifications in frontend for failed generations",
+        "Test error handling with various failure scenarios",
+        "Verify credits refunded on failure"
+      ],
+      "passes": false,
+      "priority": "P0",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "UI-001",
+      "category": "ui",
+      "description": "Create marketing landing page with brutalist design",
+      "steps": [
+        "Design hero section with bold typography and value proposition",
+        "Add features section highlighting key capabilities",
+        "Create pricing section showing credit packages",
+        "Add CTA buttons linking to signup",
+        "Ensure brutalist aesthetic consistency",
+        "Test responsive design on mobile and tablet",
+        "Add social proof or testimonials section if available"
+      ],
+      "passes": false,
+      "priority": "P0",
+      "estimatedComplexity": "high"
+    },
+    {
+      "id": "UI-002",
+      "category": "ui",
+      "description": "Create dedicated pricing page with credit package details",
+      "steps": [
+        "Design pricing cards for all packages (Starter, Pro, Business, Enterprise)",
+        "Show cost per credit calculation for transparency",
+        "Add feature comparison table between packages",
+        "Include FAQ section about credits and billing",
+        "Add CTA buttons that link to purchase flow",
+        "Ensure mobile responsive design",
+        "Match brutalist design system"
+      ],
+      "passes": false,
+      "priority": "P0",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "UI-003",
+      "category": "ui",
+      "description": "Enhanced asset filtering and sorting in project detail page",
+      "steps": [
+        "Add filter dropdown for asset type (IMAGE, VIDEO, COPY)",
+        "Add filter dropdown for aspect ratio (9:16, 3:4, 1:1, 16:9)",
+        "Add sort options (newest, oldest, type)",
+        "Implement client-side filtering logic",
+        "Add search input to filter by prompt keywords",
+        "Test with projects containing many assets",
+        "Persist filter state in URL params"
+      ],
+      "passes": false,
+      "priority": "P1",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "UI-004",
+      "category": "ui",
+      "description": "Create asset detail modal with enhanced preview and actions",
+      "steps": [
+        "Create modal component for asset detail view",
+        "Show large preview of image/video",
+        "Display asset metadata (type, aspect ratio, created date, prompt)",
+        "Add download button with file naming",
+        "Add regenerate button to create variant",
+        "Add delete button with confirmation",
+        "Test modal on mobile devices",
+        "Ensure keyboard navigation works (ESC to close)"
+      ],
+      "passes": false,
+      "priority": "P1",
+      "estimatedComplexity": "high"
+    },
+    {
+      "id": "UI-005",
+      "category": "ui",
+      "description": "Add bulk asset operations (select multiple, download as ZIP, bulk delete)",
+      "steps": [
+        "Add checkbox selection to asset grid items",
+        "Add 'Select All' checkbox in header",
+        "Create bulk actions toolbar when items selected",
+        "Implement bulk download as ZIP using archiver or jszip",
+        "Implement bulk delete with confirmation dialog",
+        "Add loading states for bulk operations",
+        "Test with large number of assets (50+)",
+        "Clear selection after bulk action completes"
+      ],
+      "passes": false,
+      "priority": "P1",
+      "estimatedComplexity": "high"
+    },
+    {
+      "id": "UX-001",
+      "category": "ux",
+      "description": "First-time user onboarding flow with product tour",
+      "steps": [
+        "Create onboarding modal shown on first login",
+        "Add step-by-step guide: 1) Create project 2) Extract brand 3) Generate assets",
+        "Add tooltips highlighting key UI elements",
+        "Store onboarding completion in user preferences",
+        "Add 'Skip tour' option",
+        "Add 'Restart tour' option in settings",
+        "Test onboarding flow from fresh account"
+      ],
+      "passes": false,
+      "priority": "P1",
+      "estimatedComplexity": "high"
+    },
+    {
+      "id": "DATA-001",
+      "category": "database",
+      "description": "Set up production PostgreSQL database with proper configuration",
+      "steps": [
+        "Choose database provider (Supabase/Neon/Railway)",
+        "Create production database instance",
+        "Configure connection pooling for performance",
+        "Set up SSL/TLS for secure connections",
+        "Run Prisma migrations on production database",
+        "Configure DATABASE_URL in production environment",
+        "Test database connectivity from production environment"
+      ],
+      "passes": false,
+      "priority": "P0",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "DATA-002",
+      "category": "database",
+      "description": "Implement database backup strategy",
+      "steps": [
+        "Set up automated daily backups",
+        "Configure backup retention policy (keep 30 days)",
+        "Test backup restoration process",
+        "Document backup and restore procedures",
+        "Set up backup monitoring alerts",
+        "Verify backups stored in secure location"
+      ],
+      "passes": false,
+      "priority": "P0",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "PAY-001",
+      "category": "payment",
+      "description": "Complete Stripe integration testing in test mode",
+      "steps": [
+        "Set up Stripe test mode account",
+        "Test credit purchase flow with test cards",
+        "Verify webhook receives payment success events",
+        "Verify credits added to user account after payment",
+        "Test payment failure scenarios",
+        "Test webhook signature verification",
+        "Document payment flow for production setup"
+      ],
+      "passes": false,
+      "priority": "P0",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "PAY-002",
+      "category": "payment",
+      "description": "Add invoice generation for credit purchases",
+      "steps": [
+        "Install PDF generation library (jsPDF or pdfkit)",
+        "Create invoice template with company details",
+        "Generate invoice on successful payment",
+        "Store invoice URL in Payment model",
+        "Add download invoice button to billing history page",
+        "Include invoice details: date, amount, credits, payment method",
+        "Test invoice generation for all credit packages"
+      ],
+      "passes": false,
+      "priority": "P1",
+      "estimatedComplexity": "high"
+    },
+    {
+      "id": "FEAT-001",
+      "category": "functional",
+      "description": "Implement generation history page showing all past generations",
+      "steps": [
+        "Create /dashboard/history page route",
+        "Query all assets for current user with pagination",
+        "Display assets in timeline view with date grouping",
+        "Show generation details: prompt, settings, credits used",
+        "Add filters: date range, asset type, project",
+        "Add search by prompt keywords",
+        "Show total credits spent in time period",
+        "Test with large number of historical generations"
+      ],
+      "passes": false,
+      "priority": "P1",
+      "estimatedComplexity": "high"
+    },
+    {
+      "id": "FEAT-002",
+      "category": "functional",
+      "description": "Add API key management UI for storing user's fal.ai keys",
+      "steps": [
+        "Create API keys section in settings page",
+        "Add form to input and save fal.ai API key",
+        "Encrypt API keys before storing in database",
+        "Show masked API key value (show only last 4 chars)",
+        "Add delete/revoke API key button",
+        "Update generation APIs to use user's key if provided",
+        "Test encryption/decryption roundtrip",
+        "Add validation for API key format"
+      ],
+      "passes": false,
+      "priority": "P1",
+      "estimatedComplexity": "high"
+    },
+    {
+      "id": "FEAT-003",
+      "category": "functional",
+      "description": "Add usage analytics dashboard showing credit consumption over time",
+      "steps": [
+        "Create analytics page at /dashboard/analytics",
+        "Query credit transactions grouped by day/week/month",
+        "Create chart showing credits spent over time",
+        "Show breakdown by asset type (images vs videos vs copy)",
+        "Add project-level analytics showing spend per project",
+        "Calculate average cost per asset",
+        "Show busiest generation times",
+        "Test with various time ranges"
+      ],
+      "passes": false,
+      "priority": "P2",
+      "estimatedComplexity": "high"
+    },
+    {
+      "id": "LEGAL-001",
+      "category": "legal",
+      "description": "Create Terms of Service page",
+      "steps": [
+        "Create /legal/terms page route",
+        "Write or generate comprehensive Terms of Service",
+        "Include sections: service description, user obligations, payment terms, IP rights, limitation of liability",
+        "Add last updated date",
+        "Link to Terms from footer",
+        "Ensure mobile readable formatting",
+        "Review with legal counsel if possible"
+      ],
+      "passes": false,
+      "priority": "P0",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "LEGAL-002",
+      "category": "legal",
+      "description": "Create Privacy Policy page",
+      "steps": [
+        "Create /legal/privacy page route",
+        "Write comprehensive Privacy Policy covering: data collection, usage, storage, third parties, user rights",
+        "Include GDPR compliance information",
+        "Add cookie policy section",
+        "Add contact information for privacy requests",
+        "Link to Privacy Policy from footer and signup",
+        "Ensure mobile readable formatting",
+        "Review with legal counsel if possible"
+      ],
+      "passes": false,
+      "priority": "P0",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "LEGAL-003",
+      "category": "legal",
+      "description": "Implement export user data feature (GDPR compliance)",
+      "steps": [
+        "Create /api/user/export-data endpoint",
+        "Gather all user data: profile, projects, assets, transactions",
+        "Generate JSON export of all user data",
+        "Add CSV export option for transactions",
+        "Include asset URLs or download links",
+        "Add 'Export My Data' button to settings page",
+        "Send export file via email or download",
+        "Test export with account containing substantial data"
+      ],
+      "passes": false,
+      "priority": "P1",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "INFRA-001",
+      "category": "infrastructure",
+      "description": "Set up CI/CD pipeline for automated deployments",
+      "steps": [
+        "Create GitHub Actions workflow file",
+        "Add build step: npm install and build",
+        "Add type checking: npm run typecheck",
+        "Add linting: npm run lint",
+        "Add test step when tests exist",
+        "Configure automatic deployment to Vercel on main branch",
+        "Add preview deployments for pull requests",
+        "Test full CI/CD flow with dummy commit"
+      ],
+      "passes": false,
+      "priority": "P0",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "INFRA-002",
+      "category": "infrastructure",
+      "description": "Set up error tracking with Sentry",
+      "steps": [
+        "Create Sentry account and project",
+        "Install @sentry/nextjs package",
+        "Configure Sentry in next.config.js",
+        "Add Sentry initialization in app layout",
+        "Set up error boundaries for React components",
+        "Configure source maps for production debugging",
+        "Test error reporting with intentional error",
+        "Set up email alerts for critical errors"
+      ],
+      "passes": false,
+      "priority": "P1",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "INFRA-003",
+      "category": "infrastructure",
+      "description": "Implement logging service for API requests and errors",
+      "steps": [
+        "Install logging library (winston or pino)",
+        "Create logger utility in src/lib/logger.ts",
+        "Add request logging middleware",
+        "Log all API errors with stack traces",
+        "Log credit transactions",
+        "Log generation requests with parameters",
+        "Configure log levels (debug, info, warn, error)",
+        "Set up log aggregation service (Logtail/Datadog)",
+        "Test log output in development and production"
+      ],
+      "passes": false,
+      "priority": "P1",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "INFRA-004",
+      "category": "infrastructure",
+      "description": "Configure CDN for asset delivery",
+      "steps": [
+        "Evaluate CDN options for Supabase storage",
+        "Configure custom domain for asset URLs",
+        "Set up cache headers for images and videos",
+        "Add image optimization if not already configured",
+        "Test asset loading speed from different geographic locations",
+        "Verify HTTPS for all asset URLs",
+        "Document CDN setup for team"
+      ],
+      "passes": false,
+      "priority": "P1",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "TEST-001",
+      "category": "testing",
+      "description": "Add mobile responsive design testing and fixes",
+      "steps": [
+        "Test all pages on mobile viewport (375px width)",
+        "Test all pages on tablet viewport (768px width)",
+        "Fix navigation menu for mobile (hamburger if needed)",
+        "Fix form layouts for narrow screens",
+        "Test asset grid responsive behavior",
+        "Fix modal dialogs on mobile",
+        "Test touch interactions",
+        "Verify brutalist design maintained on mobile"
+      ],
+      "passes": false,
+      "priority": "P0",
+      "estimatedComplexity": "high"
+    },
+    {
+      "id": "TEST-002",
+      "category": "testing",
+      "description": "Accessibility audit and fixes (WCAG AA compliance)",
+      "steps": [
+        "Run automated accessibility scan (axe-core or Lighthouse)",
+        "Fix color contrast issues",
+        "Add proper ARIA labels to interactive elements",
+        "Ensure keyboard navigation works on all pages",
+        "Add focus indicators to all interactive elements",
+        "Test with screen reader (NVDA or VoiceOver)",
+        "Fix any heading hierarchy issues",
+        "Add alt text to all images"
+      ],
+      "passes": false,
+      "priority": "P1",
+      "estimatedComplexity": "high"
+    },
+    {
+      "id": "DEPLOY-001",
+      "category": "deployment",
+      "description": "Production deployment setup on Vercel",
+      "steps": [
+        "Create production Vercel project",
+        "Configure all environment variables in Vercel dashboard",
+        "Set up custom domain with SSL",
+        "Configure Vercel analytics",
+        "Set up environment-specific configurations",
+        "Test deployment with staging environment first",
+        "Verify all API routes work in production",
+        "Document deployment process"
+      ],
+      "passes": false,
+      "priority": "P0",
+      "estimatedComplexity": "medium"
+    }
+  ],
+  "metadata": {
+    "createdAt": "2026-01-09",
+    "totalRequirements": 30,
+    "priorityBreakdown": {
+      "P0": 13,
+      "P1": 15,
+      "P2": 1
+    },
+    "categoryBreakdown": {
+      "security": 2,
+      "functional": 6,
+      "ui": 5,
+      "ux": 1,
+      "database": 2,
+      "payment": 2,
+      "legal": 3,
+      "infrastructure": 4,
+      "testing": 2,
+      "deployment": 1
+    }
+  }
+}

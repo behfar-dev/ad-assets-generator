@@ -43,6 +43,14 @@ import {
 } from "@/components/ui/icons";
 import { useUserFalKey, getUserFalKey } from "@/lib/use-user-fal-key";
 import { cn } from "@/lib/utils";
+import {
+  CREATIVE_DIRECTIONS,
+  DEFAULT_CREATIVE_DIRECTION_ID,
+  type CreativeDirectionId,
+  getCreativeDirection,
+  buildImageGenerationPrompt,
+  buildVideoGenerationPrompt,
+} from "@/lib/creative-direction";
 
 // Fal AI Logo Component
 function FalLogo({ className, style }: { className?: string; style?: React.CSSProperties }) {
@@ -184,27 +192,27 @@ const generateImageSpecsTool = {
         socialPrompts: {
           type: "array",
           items: { type: "string" },
-          description: "3 creative prompts for 9:16 social media stories. High-end product photography style, NO TEXT.",
+          description: "3 creative prompts for 9:16 social media stories. NO TEXT in images.",
         },
         portrait34Prompts: {
           type: "array",
           items: { type: "string" },
-          description: "3 creative prompts for 3:4 portrait images. High-end product photography style, NO TEXT.",
+          description: "3 creative prompts for 3:4 portrait images. NO TEXT in images.",
         },
         videoPrompts: {
           type: "array",
           items: { type: "string" },
-          description: "3 cinematic prompts for 16:9 videos. All for Kling (can include speech/text).",
+          description: "3 cinematic prompts for 16:9 videos. All for Kling.",
         },
         squarePrompts: {
           type: "array",
           items: { type: "string" },
-          description: "3 distinct prompts for 1:1 feed posts. High-end product photography style, NO TEXT.",
+          description: "3 distinct prompts for 1:1 feed posts. NO TEXT in images.",
         },
         landscapePrompts: {
           type: "array",
           items: { type: "string" },
-          description: "3 cinematic prompts for 16:9 landscape images. High-end product photography style, NO TEXT.",
+          description: "3 cinematic prompts for 16:9 landscape images. NO TEXT in images.",
         },
       },
       required: ["socialPrompts", "portrait34Prompts", "videoPrompts", "squarePrompts", "landscapePrompts"],
@@ -295,6 +303,8 @@ export default function AdAssetsGeneratorPage() {
   const [squareCount, setSquareCount] = useState<number>(1); // 1:1
   const [landscapeCount, setLandscapeCount] = useState<number>(1); // 16:9
   const [videoCount, setVideoCount] = useState<number>(1); // 16:9 videos
+  const [creativeDirectionId, setCreativeDirectionId] =
+    useState<CreativeDirectionId>(DEFAULT_CREATIVE_DIRECTION_ID);
   const [brandContext, setBrandContext] = useState<{
     colors?: string[];
     mood?: string;
@@ -470,6 +480,7 @@ export default function AdAssetsGeneratorPage() {
     const sCount = counts?.square ?? squareCount;
     const lCount = counts?.landscape ?? landscapeCount;
     const vCount = counts?.video ?? videoCount;
+    const creativeDirection = getCreativeDirection(creativeDirectionId);
 
     let prompt = `Based on context: ${JSON.stringify(context)}, create:
     - ${pCount} prompts for social (9:16)
@@ -478,15 +489,8 @@ export default function AdAssetsGeneratorPage() {
     - ${sCount} prompts for Square (1:1)
     - ${lCount} prompts for Landscape (16:9)
 
-    CRITICAL: All image prompts must be for "high-end product photography" or "ad shoot" style.
-    They must be EXTREMELY creative and visually stunning.
-    ABSOLUTELY NO TEXT IN IMAGES. Pure visual storytelling.
-
-    For Video Prompts:
-    - All ${vCount} will be for Kling.
-    - FOCUS: Creative product cinematography. Dynamic camera movements, lighting effects, slow motion.
-    - DO NOT include people speaking or introducing the product unless explicitly requested.
-    - NO "commercial film" style with actors acting out a scene. Focus on the PRODUCT itself in a creative way.
+    CONTENT GOAL: ${creativeDirection.label}
+    ${creativeDirection.assetSpecGuidelines({ vCount })}
 
     Call generate_asset_specs.`;
 
@@ -550,7 +554,7 @@ export default function AdAssetsGeneratorPage() {
 
       const result: any = await fal.subscribe("fal-ai/nano-banana-pro/edit", {
         input: {
-          prompt: "High-end product photography, ad shoot, creative lighting, " + prompt,
+          prompt: buildImageGenerationPrompt({ creativeDirectionId, prompt }),
           image_urls: sourceImageUrls,
           aspect_ratio: aspectRatio,
           num_inference_steps: 28,
@@ -603,6 +607,7 @@ export default function AdAssetsGeneratorPage() {
     setIsGeneratingAdCopy(true);
 
     const model = "google/gemini-3-pro-preview";
+    const creativeDirection = getCreativeDirection(creativeDirectionId);
 
     let prompt = `Based on brand context: ${JSON.stringify(context)}, generate comprehensive advertising copy.
 
@@ -624,6 +629,9 @@ export default function AdAssetsGeneratorPage() {
     - Tone should match the brand identity
     - Copy should be professional, engaging, and conversion-focused
     - Social media captions should be platform-appropriate
+    
+    Content goal: ${creativeDirection.label}
+    ${creativeDirection.adCopyGuidelines}
 
     Call generate_ad_copy.`;
 
@@ -709,6 +717,7 @@ export default function AdAssetsGeneratorPage() {
     const model = "google/gemini-3-pro-preview";
     const assetType = type === 'video' ? 'video' : 'image';
     const aspectRatioText = aspectRatio === '9:16' ? 'vertical (9:16)' : aspectRatio === '1:1' ? 'square (1:1)' : 'landscape (16:9)';
+    const creativeDirection = getCreativeDirection(creativeDirectionId);
 
     const prompt = `Based on brand context: ${JSON.stringify(brandContext)}, generate a UNIQUE, CREATIVE, and ORIGINAL prompt for generating a ${assetType} asset.
 
@@ -718,12 +727,13 @@ export default function AdAssetsGeneratorPage() {
     - Brand mood: ${brandContext.mood}
     - Subject: ${brandContext.subject}
     - Brand name: ${brandContext.brandName || 'Brand'}
+    - Content goal: ${creativeDirection.label}
+    ${creativeDirection.assetSpecGuidelines({ vCount: videoCount })}
     
     CRITICAL:
     - This prompt MUST be completely unique and different from any previous prompts
     - Must be EXTREMELY creative, visually stunning, and innovative
-    - For images: High-end product photography style, NO TEXT, pure visual storytelling
-    - For videos: Cinematic product cinematography, dynamic camera movements, creative lighting (Kling 2.6)
+    - ABSOLUTELY NO TEXT IN IMAGES
     - Must align with brand identity but be fresh and original
     - Each generation should feel like a completely new creative concept
     
@@ -767,7 +777,7 @@ export default function AdAssetsGeneratorPage() {
       if (type === 'video') {
         return `Cinematic ${brandContext.subject} showcase, ${brandContext.mood} atmosphere, dynamic camera movement, creative lighting, unique composition ${timestamp}, 4k quality, award-winning cinematography.`;
       } else {
-        return `High-end product photography, ${brandContext.subject}, ${brandContext.mood} mood, creative composition, unique perspective ${timestamp}, award-winning visual, professional ad shoot style.`;
+        return `Creative ${creativeDirection.label} concept, ${brandContext.subject}, ${brandContext.mood} mood, unique composition ${timestamp}, professional quality, visually stunning.`;
       }
     } catch (err) {
       console.error("Unique prompt generation error:", err);
@@ -776,7 +786,7 @@ export default function AdAssetsGeneratorPage() {
       if (type === 'video') {
         return `Cinematic ${brandContext.subject} showcase, ${brandContext.mood} atmosphere, dynamic camera movement, creative lighting, unique composition ${timestamp}, 4k quality, award-winning cinematography.`;
       } else {
-        return `High-end product photography, ${brandContext.subject}, ${brandContext.mood} mood, creative composition, unique perspective ${timestamp}, award-winning visual, professional ad shoot style.`;
+        return `Creative ${creativeDirection.label} concept, ${brandContext.subject}, ${brandContext.mood} mood, unique composition ${timestamp}, professional quality, visually stunning.`;
       }
     }
   };
@@ -830,7 +840,8 @@ export default function AdAssetsGeneratorPage() {
           if (type === 'video') {
             prompt = `Cinematic ${brandContext.subject} showcase, ${brandContext.mood} atmosphere, dynamic camera movement, creative lighting, unique composition ${timestamp}, 4k quality.`;
           } else {
-            prompt = `High-end product photography, ${brandContext.subject}, ${brandContext.mood} mood, creative composition, unique perspective ${timestamp}, award-winning visual.`;
+            const creativeDirection = getCreativeDirection(creativeDirectionId);
+            prompt = `Creative ${creativeDirection.label} concept, ${brandContext.subject}, ${brandContext.mood} mood, unique composition ${timestamp}, professional quality.`;
           }
         }
       }
@@ -861,7 +872,10 @@ export default function AdAssetsGeneratorPage() {
       // 1. Generate keyframe
       const imageResult: any = await fal.subscribe("fal-ai/nano-banana-pro/edit", {
         input: {
-          prompt: "Cinematic, clean composition, no text, " + prompt,
+          prompt: buildImageGenerationPrompt({
+            creativeDirectionId,
+            prompt: `Cinematic, clean composition, no text, ${prompt}`,
+          }),
           image_urls: sourceImageUrls,
           aspect_ratio: "16:9",
           output_format: "png"
@@ -876,7 +890,10 @@ export default function AdAssetsGeneratorPage() {
       // 2. Generate Video with Kling 2.6
       setProgressMessage(`Generating video with Kling 2.6...`);
 
-      const videoPrompt = `Cinematic, high-end product video, ${prompt}`;
+      const videoPrompt = buildVideoGenerationPrompt({
+        creativeDirectionId,
+        prompt,
+      });
 
       const result: any = await fal.subscribe("fal-ai/kling-video/v2.6/pro/image-to-video", {
         input: {
@@ -955,11 +972,13 @@ export default function AdAssetsGeneratorPage() {
           if (type === 'video') {
             prompt = `Cinematic ${brandContext.subject} showcase, ${brandContext.mood} atmosphere, dynamic camera movement, creative lighting, unique composition ${timestamp}, 4k quality.`;
           } else {
-            prompt = `High-end product photography, ${brandContext.subject}, ${brandContext.mood} mood, creative composition, unique perspective ${timestamp}, award-winning visual.`;
+            const creativeDirection = getCreativeDirection(creativeDirectionId);
+            prompt = `Creative ${creativeDirection.label} concept, ${brandContext.subject}, ${brandContext.mood} mood, unique composition ${timestamp}, professional quality.`;
           }
         }
       } else {
-        prompt = `Creative variant, high-end product photography, unique composition ${Date.now()}`;
+        const creativeDirection = getCreativeDirection(creativeDirectionId);
+        prompt = `Creative variant for ${creativeDirection.label}, unique composition ${Date.now()}`;
       }
 
       // Update asset description with actual prompt
@@ -972,7 +991,10 @@ export default function AdAssetsGeneratorPage() {
         try {
           setProgressMessage(`Generating video from selected image...`);
 
-          const videoPrompt = `Cinematic, high-end product video, ${prompt}`;
+          const videoPrompt = buildVideoGenerationPrompt({
+            creativeDirectionId,
+            prompt,
+          });
 
           const result: any = await fal.subscribe("fal-ai/kling-video/v2.6/pro/image-to-video", {
             input: {
@@ -1017,7 +1039,7 @@ export default function AdAssetsGeneratorPage() {
 
           const result: any = await fal.subscribe("fal-ai/nano-banana-pro/edit", {
             input: {
-              prompt: "High-end product photography, ad shoot, creative lighting, " + prompt,
+              prompt: buildImageGenerationPrompt({ creativeDirectionId, prompt }),
               image_urls: [sourceAsset.url],
               aspect_ratio: aspectRatio,
               num_inference_steps: 28,
@@ -1514,6 +1536,34 @@ export default function AdAssetsGeneratorPage() {
 
                       <p className="text-[10px] text-white/30">
                         Total: {portraitCount + portrait34Count + squareCount + landscapeCount} images, {videoCount} videos
+                      </p>
+                    </div>
+
+                    {/* Content Goal */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-white/50 uppercase tracking-wider flex items-center gap-2">
+                        <SparklesIcon className="w-3.5 h-3.5" style={{ color: "#e7083e" }} />
+                        Content Goal
+                      </label>
+                      <Select
+                        value={creativeDirectionId}
+                        onValueChange={(value) =>
+                          setCreativeDirectionId(value as CreativeDirectionId)
+                        }
+                      >
+                        <SelectTrigger className="h-12 bg-white/[0.03] border-white/[0.08] text-white hover:bg-white/[0.06] hover:border-white/[0.12] focus:bg-white/[0.06] transition-all duration-200 rounded-none">
+                          <SelectValue placeholder="Select a content goal" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CREATIVE_DIRECTIONS.map((dir) => (
+                            <SelectItem key={dir.id} value={dir.id}>
+                              {dir.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-[10px] text-white/30">
+                        {getCreativeDirection(creativeDirectionId).description}
                       </p>
                     </div>
 

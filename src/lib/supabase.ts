@@ -7,6 +7,9 @@ export const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
 );
 
+// Note: Storage policies have been configured to allow uploads with anon key
+// No need for service role key - we use the publishable key
+
 /**
  * Upload a text file to Supabase Storage
  * @param bucket - The storage bucket name (e.g., 'ad-copy')
@@ -72,6 +75,40 @@ export async function uploadJsonToStorage(
 }
 
 /**
+ * Upload a file (Blob/Buffer) to Supabase Storage
+ * @param bucket - The storage bucket name
+ * @param path - The file path in the bucket
+ * @param file - The file data (Blob or Buffer)
+ * @param contentType - Optional content type
+ * @returns The public URL of the uploaded file
+ */
+export async function uploadToStorage(
+  bucket: string,
+  path: string,
+  file: Blob | Buffer,
+  contentType?: string
+): Promise<string> {
+  // Use publishable key - RLS policies allow uploads to brand-assets bucket
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .upload(path, file, {
+      contentType,
+      upsert: true,
+    });
+
+  if (error) {
+    throw new Error(`Failed to upload to storage: ${error.message}`);
+  }
+
+  // Get public URL
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from(bucket).getPublicUrl(data.path);
+
+  return publicUrl;
+}
+
+/**
  * Delete a file from Supabase Storage
  * @param bucket - The storage bucket name
  * @param path - The file path in the bucket
@@ -80,6 +117,7 @@ export async function deleteFromStorage(
   bucket: string,
   path: string
 ): Promise<void> {
+  // Use publishable key - RLS policies allow deletes from brand-assets bucket
   const { error } = await supabase.storage.from(bucket).remove([path]);
 
   if (error) {

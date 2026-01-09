@@ -20,6 +20,23 @@ import { cn } from "@/lib/utils";
 import OpenAI from "openai";
 import { fal } from "@fal-ai/client";
 import { getUserFalKey } from "@/lib/use-user-fal-key";
+import { ProjectCard } from "@/components/project/project-card";
+import { BrandAssetSelector } from "@/components/brand/brand-asset-selector";
+import {
+  CREATIVE_DIRECTIONS,
+  DEFAULT_CREATIVE_DIRECTION_ID,
+  type CreativeDirectionId,
+  getCreativeDirection,
+  buildImageGenerationPrompt,
+  buildVideoGenerationPrompt,
+} from "@/lib/creative-direction";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Fal AI Logo Spinner Component
 function FalSpinner({ className, style }: { className?: string; style?: React.CSSProperties }) {
@@ -118,11 +135,11 @@ const generateImageSpecsTool = {
     parameters: {
       type: "object",
       properties: {
-        socialPrompts: { type: "array", items: { type: "string" }, description: "Prompts for 9:16 stories. High-end product photography, NO TEXT." },
-        portrait34Prompts: { type: "array", items: { type: "string" }, description: "Prompts for 3:4 portrait. High-end product photography, NO TEXT." },
+        socialPrompts: { type: "array", items: { type: "string" }, description: "Prompts for 9:16 stories. NO TEXT in images." },
+        portrait34Prompts: { type: "array", items: { type: "string" }, description: "Prompts for 3:4 portrait. NO TEXT in images." },
         videoPrompts: { type: "array", items: { type: "string" }, description: "Cinematic prompts for 16:9 videos (Kling)." },
-        squarePrompts: { type: "array", items: { type: "string" }, description: "Prompts for 1:1 feed posts. High-end product photography, NO TEXT." },
-        landscapePrompts: { type: "array", items: { type: "string" }, description: "Cinematic prompts for 16:9 landscape. High-end product photography, NO TEXT." },
+        squarePrompts: { type: "array", items: { type: "string" }, description: "Prompts for 1:1 feed posts. NO TEXT in images." },
+        landscapePrompts: { type: "array", items: { type: "string" }, description: "Cinematic prompts for 16:9 landscape. NO TEXT in images." },
       },
       required: ["socialPrompts", "portrait34Prompts", "videoPrompts", "squarePrompts", "landscapePrompts"],
     },
@@ -167,10 +184,28 @@ const generateUniquePromptTool = {
   },
 };
 
+interface BrandAsset {
+  id: string;
+  type: "LOGO" | "FOUNDER" | "MASCOT" | "PRODUCT" | "OTHER";
+  url: string;
+  description?: string | null;
+  tags?: string[];
+}
+
 type Project = {
   id: string;
   name: string;
   description: string | null;
+  brandAssets?: BrandAsset[];
+  brandData?: {
+    colors?: string[];
+    brandName?: string;
+    tagline?: string;
+    description?: string;
+    voice?: string;
+    industry?: string;
+    productCategories?: string[];
+  } | null;
 };
 
 export default function GeneratePage() {
@@ -193,6 +228,8 @@ export default function GeneratePage() {
   const [videoCount, setVideoCount] = useState<number>(1);
 
   const [userInstruction, setUserInstruction] = useState("");
+  const [creativeDirectionId, setCreativeDirectionId] =
+    useState<CreativeDirectionId>(DEFAULT_CREATIVE_DIRECTION_ID);
 
   // Processing state
   const [isProcessing, setIsProcessing] = useState(false);
@@ -234,6 +271,7 @@ export default function GeneratePage() {
   const [singleAssetInstruction, setSingleAssetInstruction] = useState("");
   const [showAssetVariantDialog, setShowAssetVariantDialog] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<Asset | HistoryItem | null>(null);
+  const [showBrandAssetSelector, setShowBrandAssetSelector] = useState(false);
   const [variantInstruction, setVariantInstruction] = useState("");
   const [variantAspectRatio, setVariantAspectRatio] = useState<'9:16' | '3:4' | '1:1' | '16:9'>('16:9');
   const [variantType, setVariantType] = useState<'image' | 'video'>('image');
@@ -248,6 +286,34 @@ export default function GeneratePage() {
     loadHistory();
     loadProjects();
   }, [session]);
+
+  // Load brand data when project is selected
+  useEffect(() => {
+    if (selectedProjectId) {
+      loadProjectBrandData(selectedProjectId);
+    }
+  }, [selectedProjectId]);
+
+  const loadProjectBrandData = async (projectId: string) => {
+    try {
+      const response = await fetch(`/api/projects/${projectId}`);
+      if (response.ok) {
+        const project = await response.json();
+
+        // If project has brand data, populate brand context
+        if (project.brandData) {
+          setBrandContext({
+            colors: project.brandData.colors || [],
+            mood: project.brandData.voice || "Professional",
+            subject: project.brandData.description || project.brandName || "Brand",
+            brandName: project.brandData.brandName || project.name,
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load project brand data:", err);
+    }
+  };
 
   const loadProjects = async () => {
     if (!session?.user?.id) return;
@@ -471,6 +537,19 @@ export default function GeneratePage() {
     const lCount = counts?.landscape ?? landscapeCount;
     const vCount = counts?.video ?? videoCount;
 
+    // Build brand context string if available
+    let brandContextStr = "";
+    if (brandContext?.colors && brandContext.colors.length > 0) {
+      brandContextStr += `\nBrand Colors: ${brandContext.colors.join(", ")}`;
+    }
+    if (brandContext?.mood) {
+      brandContextStr += `\nBrand Voice/Tone: ${brandContext.mood}`;
+    }
+    if (brandContext?.brandName) {
+      brandContextStr += `\nBrand Name: ${brandContext.brandName}`;
+    }
+
+    const creativeDirection = getCreativeDirection(creativeDirectionId);
     let prompt = `Based on context: ${JSON.stringify(context)}, create:
     - ${pCount} prompts for social (9:16)
     - ${p34Count} prompts for portrait (3:4)
@@ -478,9 +557,9 @@ export default function GeneratePage() {
     - ${sCount} prompts for Square (1:1)
     - ${lCount} prompts for Landscape (16:9)
 
-    CRITICAL: All image prompts must be "high-end product photography" style.
-    ABSOLUTELY NO TEXT IN IMAGES. Pure visual storytelling.
-    For videos: Creative product cinematography. Dynamic movements, lighting effects.
+    CONTENT GOAL: ${creativeDirection.label}
+    ${creativeDirection.assetSpecGuidelines({ vCount })}
+    ${brandContextStr ? `\nBRAND GUIDELINES:${brandContextStr}\nEnsure all prompts align with these brand guidelines.` : ""}
 
     Call generate_asset_specs.`;
 
@@ -537,6 +616,7 @@ export default function GeneratePage() {
           settings: {
             brandContext,
             userInstruction,
+            creativeDirectionId,
           },
           creditCost: asset.type === 'video' ? 5 : 1,
         }),
@@ -565,7 +645,7 @@ export default function GeneratePage() {
 
       const result: any = await fal.subscribe("fal-ai/nano-banana-pro/edit", {
         input: {
-          prompt: "High-end product photography, ad shoot, creative lighting, " + prompt,
+          prompt: buildImageGenerationPrompt({ creativeDirectionId, prompt }),
           image_urls: sourceImageUrls,
           aspect_ratio: aspectRatio,
           num_inference_steps: 28,
@@ -627,7 +707,10 @@ export default function GeneratePage() {
 
       const imageResult: any = await fal.subscribe("fal-ai/nano-banana-pro/edit", {
         input: {
-          prompt: "Cinematic, clean composition, no text, " + prompt,
+          prompt: buildImageGenerationPrompt({
+            creativeDirectionId,
+            prompt: `Cinematic, clean composition, no text, ${prompt}`,
+          }),
           image_urls: sourceImageUrls,
           aspect_ratio: "16:9",
           output_format: "png"
@@ -640,7 +723,10 @@ export default function GeneratePage() {
 
       setProgressMessage(`Generating video with Kling 2.6...`);
 
-      const videoPrompt = `Cinematic, high-end product video, ${prompt}`;
+      const videoPrompt = buildVideoGenerationPrompt({
+        creativeDirectionId,
+        prompt,
+      });
       const result: any = await fal.subscribe("fal-ai/kling-video/v2.6/pro/image-to-video", {
         input: {
           prompt: videoPrompt,
@@ -704,9 +790,12 @@ export default function GeneratePage() {
     setIsGeneratingAdCopy(true);
 
     const model = "google/gemini-3-pro-preview";
+    const creativeDirection = getCreativeDirection(creativeDirectionId);
     let prompt = `Based on brand context: ${JSON.stringify(context)}, generate comprehensive advertising copy.
     Create: headline, tagline, description, CTA, hashtags, and social media captions.
     Align with brand mood: ${context.mood}, subject: ${context.subject}, brand: ${context.brandName || 'Brand'}
+    Content goal: ${creativeDirection.label}
+    ${creativeDirection.adCopyGuidelines}
     Call generate_ad_copy.`;
 
     if (customInstruction) {
@@ -755,9 +844,12 @@ export default function GeneratePage() {
     const client = ensureOpenAIClient();
     const model = "google/gemini-3-pro-preview";
     const assetType = type === 'video' ? 'video' : 'image';
+    const creativeDirection = getCreativeDirection(creativeDirectionId);
 
     const prompt = `Based on brand context: ${JSON.stringify(brandContext)}, generate a UNIQUE prompt for ${assetType} (${aspectRatio}).
     Must be creative, visually stunning, and aligned with mood: ${brandContext.mood}, subject: ${brandContext.subject}.
+    Content goal: ${creativeDirection.label}
+    ${creativeDirection.assetSpecGuidelines({ vCount: videoCount })}
     Call generate_unique_prompt.`;
 
     try {
@@ -778,13 +870,13 @@ export default function GeneratePage() {
       const timestamp = Date.now();
       return type === 'video'
         ? `Cinematic ${brandContext.subject} showcase, ${brandContext.mood} atmosphere, unique ${timestamp}`
-        : `High-end product photography, ${brandContext.subject}, ${brandContext.mood} mood, unique ${timestamp}`;
+        : `Creative ${creativeDirection.label} concept, ${brandContext.subject}, ${brandContext.mood} mood, unique ${timestamp}`;
     } catch (err) {
       console.error("Unique prompt error:", err);
       const timestamp = Date.now();
       return type === 'video'
         ? `Cinematic ${brandContext.subject} showcase, ${brandContext.mood} atmosphere, unique ${timestamp}`
-        : `High-end product photography, ${brandContext.subject}, ${brandContext.mood} mood, unique ${timestamp}`;
+        : `Creative ${creativeDirection.label} concept, ${brandContext.subject}, ${brandContext.mood} mood, unique ${timestamp}`;
     }
   };
 
@@ -914,7 +1006,8 @@ export default function GeneratePage() {
       } else if (brandContext) {
         prompt = await generateUniquePrompt(type, aspectRatio);
       } else {
-        prompt = `Creative variant, high-end product photography ${Date.now()}`;
+        const creativeDirection = getCreativeDirection(creativeDirectionId);
+        prompt = `Creative variant for ${creativeDirection.label}, unique ${Date.now()}`;
       }
 
       setGeneratedAssets(prev => prev.map(asset =>
@@ -932,7 +1025,10 @@ export default function GeneratePage() {
 
         setProgressMessage(`Generating video from selected image...`);
 
-        const videoPrompt = `Cinematic, high-end product video, ${prompt}`;
+        const videoPrompt = buildVideoGenerationPrompt({
+          creativeDirectionId,
+          prompt,
+        });
         const result: any = await fal.subscribe("fal-ai/kling-video/v2.6/pro/image-to-video", {
           input: {
             prompt: videoPrompt,
@@ -985,7 +1081,7 @@ export default function GeneratePage() {
 
         const result: any = await fal.subscribe("fal-ai/nano-banana-pro/edit", {
           input: {
-            prompt: "High-end product photography, ad shoot, creative lighting, " + prompt,
+            prompt: buildImageGenerationPrompt({ creativeDirectionId, prompt }),
             image_urls: [sourceAsset.url],
             aspect_ratio: aspectRatio,
             num_inference_steps: 28,
@@ -1135,7 +1231,8 @@ export default function GeneratePage() {
     setProgressMessage("Uploading images...");
     setError(null);
     setCurrentPhase('analyzing');
-    setBrandContext(null);
+    // DON'T clear brandContext - preserve project brand data
+    const hasProjectBrandData = brandContext && (brandContext.colors || brandContext.brandName);
     setGeneratedAssets([]);
     creditTransactionsRef.current = []; // Reset credit transactions
 
@@ -1149,7 +1246,7 @@ export default function GeneratePage() {
       if (totalCredits > 0) {
         setProgressMessage("Checking credits...");
         const creditCheck = await checkCredits(totalCredits);
-        
+
         if (!creditCheck.hasEnough) {
           setError(`Insufficient credits. Required: ${totalCredits}, Available: ${creditCheck.balance}`);
           setIsProcessing(false);
@@ -1178,26 +1275,35 @@ export default function GeneratePage() {
         throw new Error("Failed to upload images");
       }
 
-      setProgressMessage("Analyzing brand identity...");
-      setProgress(20);
-      const primaryImageBase64 = await fileToBase64(uploadedImages[0]);
-      const analysisResult = await analyzeImage(primaryImageBase64);
+      // Only analyze image if project brand data doesn't exist
+      let finalBrandContext = brandContext;
+      if (!hasProjectBrandData) {
+        setProgressMessage("Analyzing brand identity...");
+        setProgress(20);
+        const primaryImageBase64 = await fileToBase64(uploadedImages[0]);
+        const analysisResult = await analyzeImage(primaryImageBase64);
 
-      if (!analysisResult) {
-        // Refund credits if analysis fails
-        if (totalCredits > 0) {
-          await refundAllFailedCredits("Failed to analyze brand identity");
+        if (!analysisResult) {
+          // Refund credits if analysis fails
+          if (totalCredits > 0) {
+            await refundAllFailedCredits("Failed to analyze brand identity");
+          }
+          throw new Error("Failed to analyze image");
         }
-        throw new Error("Failed to analyze image");
+
+        finalBrandContext = analysisResult;
+        setBrandContext(analysisResult);
+      } else {
+        setProgressMessage("Using project brand data...");
+        setProgress(20);
       }
 
-      setBrandContext(analysisResult);
       setProgress(30);
 
       setProgressMessage("Formulating strategy...");
       setProgress(40);
       const counts = { portrait: portraitCount, portrait34: portrait34Count, square: squareCount, landscape: landscapeCount, video: videoCount };
-      const specs = await createSpecs({ mood: analysisResult.mood, subject: analysisResult.subject }, userInstruction, counts);
+      const specs = await createSpecs({ mood: finalBrandContext?.mood || "Professional", subject: finalBrandContext?.subject || "Brand" }, userInstruction, counts);
 
       setCurrentPhase('generating');
       setProgressMessage("Generating assets...");
@@ -1261,7 +1367,7 @@ export default function GeneratePage() {
 
       setIsGeneratingAdCopy(true);
       try {
-        await generateAdCopy(userInstruction || undefined, analysisResult);
+        await generateAdCopy(userInstruction || undefined, finalBrandContext);
       } catch (err) {
         console.error("Ad copy error:", err);
       } finally {
@@ -1345,6 +1451,30 @@ export default function GeneratePage() {
       URL.revokeObjectURL(previewUrls[index]);
     }
     setPreviewUrls(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleBrandAssetsSelected = async (assets: BrandAsset[]) => {
+    try {
+      // Download each brand asset and convert to File
+      const filePromises = assets.map(async (asset) => {
+        const response = await fetch(asset.url);
+        const blob = await response.blob();
+        const filename = `brand-${asset.type.toLowerCase()}-${asset.id}.${blob.type.split('/')[1] || 'png'}`;
+        return new File([blob], filename, { type: blob.type });
+      });
+
+      const files = await Promise.all(filePromises);
+
+      // Add to uploaded images
+      setUploadedImages(prev => [...prev, ...files]);
+
+      // Create preview URLs
+      const newPreviewUrls = files.map(file => URL.createObjectURL(file));
+      setPreviewUrls(prev => [...prev, ...newPreviewUrls]);
+    } catch (err) {
+      console.error("Failed to load brand assets:", err);
+      setError("Failed to load brand assets");
+    }
   };
 
   const getAspectRatioBadge = (ratio: string) => {
@@ -1455,9 +1585,23 @@ export default function GeneratePage() {
                           </div>
                         ))}
                       </div>
-                      <Button variant="outline" className="w-full" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}>
-                        Add More Images
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button variant="outline" className="flex-1" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}>
+                          Add More Images
+                        </Button>
+                        {selectedProjectId && projects.find(p => p.id === selectedProjectId)?.brandAssets && projects.find(p => p.id === selectedProjectId)!.brandAssets!.length > 0 && (
+                          <Button
+                            variant="default"
+                            className="flex-1 font-bold"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowBrandAssetSelector(true);
+                            }}
+                          >
+                            Select from Brand Assets
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center text-center space-y-4">
@@ -1473,38 +1617,94 @@ export default function GeneratePage() {
                     </div>
                   )}
                 </div>
+
+                {/* Brand Assets Button (when empty) */}
+                {previewUrls.length === 0 && selectedProjectId && projects.find(p => p.id === selectedProjectId)?.brandAssets && projects.find(p => p.id === selectedProjectId)!.brandAssets!.length > 0 && (
+                  <div className="mt-4">
+                    <Button
+                      variant="default"
+                      className="w-full font-bold"
+                      onClick={() => setShowBrandAssetSelector(true)}
+                    >
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      Select from Brand Assets
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
             <Card className="border-4 border-foreground">
               <CardHeader>
-                <CardTitle className="text-lg">Project (Required)</CardTitle>
+                <CardTitle className="text-lg">Select Project (Required)</CardTitle>
+                <p className="text-sm text-muted-foreground font-normal">
+                  Choose a project to save generated assets. If the project has brand data, it will be used automatically.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {isLoadingProjects ? (
+                  <div className="flex items-center justify-center py-8">
+                    <FalSpinner className="w-8 h-8" />
+                  </div>
+                ) : projects.length > 0 ? (
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {projects.map((project) => (
+                      <ProjectCard
+                        key={project.id}
+                        id={project.id}
+                        name={project.name}
+                        description={project.description}
+                        brandAssets={project.brandAssets}
+                        selected={selectedProjectId === project.id}
+                        onClick={() => setSelectedProjectId(project.id)}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-sm text-muted-foreground mb-2">
+                      No projects found.
+                    </p>
+                    <Link href="/projects/new">
+                      <Button variant="outline" size="sm">
+                        Create Your First Project
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="border-4 border-foreground">
+              <CardHeader>
+                <CardTitle className="text-lg">Content Goal</CardTitle>
+                <p className="text-sm text-muted-foreground font-normal">
+                  Choose what kind of content you’re trying to create. This changes the “critical instructions” used for prompts.
+                </p>
               </CardHeader>
               <CardContent className="space-y-2">
-                <select
-                  value={selectedProjectId}
-                  onChange={(e) => setSelectedProjectId(e.target.value)}
-                  className="w-full border-4 border-foreground/20 focus:border-foreground h-12 px-3 bg-background"
-                  disabled={isLoadingProjects}
+                <Select
+                  value={creativeDirectionId}
+                  onValueChange={(value) =>
+                    setCreativeDirectionId(value as CreativeDirectionId)
+                  }
                 >
-                  <option value="">Select a project...</option>
-                  {projects.map((project) => (
-                    <option key={project.id} value={project.id}>
-                      {project.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="border-4 border-foreground/20 focus:border-foreground h-12">
+                    <SelectValue placeholder="Select a content goal" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CREATIVE_DIRECTIONS.map((dir) => (
+                      <SelectItem key={dir.id} value={dir.id}>
+                        {dir.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <p className="text-xs text-muted-foreground">
-                  Generated assets will be saved to this project
+                  {getCreativeDirection(creativeDirectionId).description}
                 </p>
-                {projects.length === 0 && !isLoadingProjects && (
-                  <p className="text-xs text-destructive">
-                    No projects found.{" "}
-                    <Link href="/projects/new" className="underline">
-                      Create a project first
-                    </Link>
-                  </p>
-                )}
               </CardContent>
             </Card>
 
@@ -2318,6 +2518,18 @@ export default function GeneratePage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Brand Asset Selector Dialog */}
+      <BrandAssetSelector
+        open={showBrandAssetSelector}
+        onOpenChange={setShowBrandAssetSelector}
+        brandAssets={
+          selectedProjectId
+            ? projects.find(p => p.id === selectedProjectId)?.brandAssets || []
+            : []
+        }
+        onSelect={handleBrandAssetsSelected}
+      />
     </div>
   );
 }

@@ -34,7 +34,7 @@ export async function checkCreditBalance(
 export async function deductCredits(
   userId: string,
   amount: number,
-  type: "IMAGE_GENERATION" | "VIDEO_GENERATION" | "AD_COPY_GENERATION",
+  type: "IMAGE_GENERATION" | "VIDEO_GENERATION" | "AD_COPY_GENERATION" | "BRAND_EXTRACTION",
   description?: string
 ): Promise<{ newBalance: number; transactionId: string }> {
   // Map generation types to Prisma CreditTransactionType
@@ -89,7 +89,7 @@ export async function deductCredits(
 export async function refundCredits(
   userId: string,
   amount: number,
-  originalType: "IMAGE_GENERATION" | "VIDEO_GENERATION" | "AD_COPY_GENERATION",
+  originalType: "IMAGE_GENERATION" | "VIDEO_GENERATION" | "AD_COPY_GENERATION" | "BRAND_EXTRACTION",
   reason?: string
 ): Promise<{ newBalance: number }> {
   const result = await prisma.$transaction(async (tx) => {

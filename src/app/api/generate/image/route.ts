@@ -8,6 +8,11 @@ import {
   refundCredits,
   CREDIT_COSTS,
 } from "@/lib/credits";
+import {
+  DEFAULT_CREATIVE_DIRECTION_ID,
+  buildImageGenerationPrompt,
+} from "@/lib/creative-direction";
+import { generateImageSchema, validateRequest } from "@/lib/validations";
 
 // POST /api/generate/image - Generate image ad creative
 export async function POST(request: NextRequest) {
@@ -17,14 +22,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { imageUrl, prompt, aspectRatio, projectId, count = 1 } = await request.json();
-
-    if (!imageUrl) {
-      return NextResponse.json(
-        { error: "Image URL is required" },
-        { status: 400 }
-      );
+    const body = await request.json();
+    const validation = validateRequest(generateImageSchema, body);
+    if (!validation.success) {
+      return validation.error;
     }
+
+    const {
+      imageUrl,
+      prompt,
+      aspectRatio,
+      projectId,
+      count,
+      creativeDirectionId = DEFAULT_CREATIVE_DIRECTION_ID,
+    } = validation.data;
 
     // Calculate total credits needed
     const totalCredits = CREDIT_COSTS.IMAGE * count;
@@ -91,6 +102,7 @@ export async function POST(request: NextRequest) {
           prompt,
           aspectRatio,
           count,
+          creativeDirectionId,
         },
       },
     });
@@ -121,10 +133,13 @@ export async function POST(request: NextRequest) {
               type: "IMAGE",
               aspectRatio: gen.aspectRatio,
               url: gen.url,
-              prompt: prompt || null,
+              prompt: prompt
+                ? buildImageGenerationPrompt({ creativeDirectionId, prompt })
+                : null,
               settings: {
                 sourceImage: imageUrl,
                 generationJobId: job.id,
+                creativeDirectionId,
               },
             },
           })

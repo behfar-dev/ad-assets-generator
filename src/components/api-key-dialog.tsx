@@ -10,6 +10,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogDescription,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
@@ -75,6 +76,9 @@ export function ApiKeyDialog() {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>fal.ai API Settings</DialogTitle>
+          <DialogDescription>
+            Add your personal API key to bypass rate limits and unlock all available models.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 pt-4">
           {hasUserKey ? (

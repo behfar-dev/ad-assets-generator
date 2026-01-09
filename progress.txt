@@ -1,0 +1,45 @@
+# Ralph Progress Log
+# Ad Assets Generator SaaS Platform v1.0
+
+## Session started: 2026-01-09
+
+This file tracks Ralph's progress across iterations.
+Each completed task should be logged with:
+- Task ID and description
+- Key decisions and reasoning
+- Files changed
+- Any blockers or notes
+
+---
+
+## Iteration Log
+
+### Iteration 1 - SEC-001: Input validation with Zod schemas
+**Status:** Completed
+**Task:** Implement input validation with Zod schemas across all API routes
+
+**Changes:**
+- Created `src/lib/validations/` with comprehensive Zod schemas:
+  - `index.ts` - validateRequest helper, common schemas
+  - `generate.ts` - image/video/copy generation schemas
+  - `projects.ts` - project CRUD schemas
+  - `auth.ts` - signup/login/password schemas
+  - `user.ts` - profile/settings schemas
+- Updated API routes to use validation:
+  - `/api/generate/image` - uses generateImageSchema
+  - `/api/generate/video` - uses generateVideoSchema
+  - `/api/generate/copy` - uses generateCopySchema
+  - `/api/projects` - uses createProjectSchema, paginationSchema
+
+**Decisions:**
+- Used Zod v4 API (issues vs errors)
+- Created validateRequest helper for consistent error responses
+- Added sensible defaults and limits (max 10 images, max 5 videos)
+
+**Also fixed:**
+- Added typecheck script to package.json
+- Added .eslintrc.json config
+- Fixed TypeScript errors in credits.ts (added BRAND_EXTRACTION type)
+- Fixed JSON type casting in copy/route.ts and extract-brand/route.ts
+- Fixed iterator in brand-extraction.ts
+- Installed zod, eslint@8, eslint-config-next@14.2.0

@@ -13,6 +13,7 @@ export default function NewProjectPage() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+    websiteUrl: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -101,6 +102,24 @@ export default function NewProjectPage() {
                 rows={4}
                 className="w-full border-4 border-foreground p-4 text-base font-medium bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring"
               />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-bold uppercase tracking-wide">
+                Website URL (Optional)
+              </label>
+              <Input
+                type="url"
+                placeholder="https://yourbrand.com"
+                value={formData.websiteUrl}
+                onChange={(e) =>
+                  setFormData({ ...formData, websiteUrl: e.target.value })
+                }
+                className="border-4 border-foreground"
+              />
+              <p className="text-sm text-muted-foreground">
+                Add a website URL to automatically extract brand data (colors, logo, etc.) - costs 2 credits
+              </p>
             </div>
 
             <div className="flex items-center space-x-4">

@@ -26,6 +26,9 @@ export async function GET(
         assets: {
           orderBy: { createdAt: "desc" },
         },
+        brandAssets: {
+          orderBy: { createdAt: "desc" },
+        },
         _count: {
           select: { assets: true },
         },
@@ -62,7 +65,7 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const { name, description } = await request.json();
+    const { name, description, websiteUrl, brandData } = await request.json();
 
     // Check if project exists and belongs to user
     const existingProject = await prisma.project.findFirst({
@@ -76,11 +79,28 @@ export async function PATCH(
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
+    // Validate URL if provided
+    if (websiteUrl !== undefined && websiteUrl?.trim().length > 0) {
+      try {
+        new URL(websiteUrl);
+      } catch {
+        return NextResponse.json(
+          { error: "Invalid website URL" },
+          { status: 400 }
+        );
+      }
+    }
+
     const updatedProject = await prisma.project.update({
       where: { id },
       data: {
         name: name?.trim() || existingProject.name,
         description: description?.trim() ?? existingProject.description,
+        websiteUrl: websiteUrl !== undefined ? (websiteUrl?.trim() || null) : existingProject.websiteUrl,
+        brandData: brandData !== undefined ? brandData : existingProject.brandData,
+      },
+      include: {
+        brandAssets: true,
       },
     });
 

@@ -8,6 +8,11 @@ import {
   refundCredits,
   CREDIT_COSTS,
 } from "@/lib/credits";
+import {
+  DEFAULT_CREATIVE_DIRECTION_ID,
+  buildVideoGenerationPrompt,
+} from "@/lib/creative-direction";
+import { generateVideoSchema, validateRequest } from "@/lib/validations";
 
 // POST /api/generate/video - Generate video ad creative
 export async function POST(request: NextRequest) {
@@ -17,21 +22,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const body = await request.json();
+    const validation = validateRequest(generateVideoSchema, body);
+    if (!validation.success) {
+      return validation.error;
+    }
+
     const {
       imageUrl,
       prompt,
-      aspectRatio = "16:9",
-      duration = 5,
+      aspectRatio,
+      duration,
       projectId,
-      count = 1,
-    } = await request.json();
-
-    if (!imageUrl) {
-      return NextResponse.json(
-        { error: "Image URL is required" },
-        { status: 400 }
-      );
-    }
+      count,
+      creativeDirectionId = DEFAULT_CREATIVE_DIRECTION_ID,
+    } = validation.data;
 
     // Calculate total credits needed
     const totalCredits = CREDIT_COSTS.VIDEO * count;
@@ -99,6 +104,7 @@ export async function POST(request: NextRequest) {
           aspectRatio,
           duration,
           count,
+          creativeDirectionId,
         },
       },
     });
@@ -130,11 +136,14 @@ export async function POST(request: NextRequest) {
               type: "VIDEO",
               aspectRatio: gen.aspectRatio,
               url: gen.url,
-              prompt: prompt || null,
+              prompt: prompt
+                ? buildVideoGenerationPrompt({ creativeDirectionId, prompt })
+                : null,
               settings: {
                 sourceImage: imageUrl,
                 duration: gen.duration,
                 generationJobId: job.id,
+                creativeDirectionId,
               },
             },
           })

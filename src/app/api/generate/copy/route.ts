@@ -9,6 +9,12 @@ import {
   CREDIT_COSTS,
 } from "@/lib/credits";
 import { uploadJsonToStorage } from "@/lib/supabase";
+import {
+  DEFAULT_CREATIVE_DIRECTION_ID,
+  getCreativeDirection,
+  type CreativeDirectionId,
+} from "@/lib/creative-direction";
+import { generateCopySchema, validateRequest } from "@/lib/validations";
 
 interface AdCopy {
   headline: string;
@@ -25,22 +31,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const body = await request.json();
+    const validation = validateRequest(generateCopySchema, body);
+    if (!validation.success) {
+      return validation.error;
+    }
+
     const {
       productName,
       productDescription,
       targetAudience,
-      tone = "professional",
-      platform = "general",
-      count = 3,
+      tone,
+      platform,
+      count,
       projectId,
-    } = await request.json();
-
-    if (!productName || !productDescription) {
-      return NextResponse.json(
-        { error: "Product name and description are required" },
-        { status: 400 }
-      );
-    }
+      creativeDirectionId = DEFAULT_CREATIVE_DIRECTION_ID,
+    } = validation.data;
 
     // Verify project belongs to user if provided
     if (projectId) {
@@ -107,6 +113,7 @@ export async function POST(request: NextRequest) {
           tone,
           platform,
           count,
+          creativeDirectionId,
         },
       },
     });
@@ -123,11 +130,14 @@ export async function POST(request: NextRequest) {
       // });
 
       // Generate placeholder copy (replace with actual AI generation)
+      const creativeDirection = getCreativeDirection(
+        creativeDirectionId as CreativeDirectionId
+      );
       const generatedCopy: AdCopy[] = Array.from({ length: count }, (_, i) => ({
         headline: `${productName} - Your Perfect Solution #${i + 1}`,
         description: `Discover ${productName}. ${productDescription.substring(0, 100)}...`,
         cta: ["Shop Now", "Learn More", "Get Started", "Try Free"][i % 4],
-        socialCaption: `Check out ${productName}! Perfect for ${targetAudience || "everyone"}. #ad #${productName.replace(/\s+/g, "")}`,
+        socialCaption: `(${creativeDirection.label}) Check out ${productName}! Perfect for ${targetAudience || "everyone"}. #ad #${productName.replace(/\s+/g, "")}`,
       }));
 
       // Save each copy to Supabase storage and create Asset records
@@ -156,8 +166,9 @@ export async function POST(request: NextRequest) {
                   targetAudience,
                   productName,
                   productDescription,
+                  creativeDirectionId,
                   copy,
-                },
+                } as any,
               },
             });
 

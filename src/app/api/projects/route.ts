@@ -2,6 +2,11 @@ import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import {
+  createProjectSchema,
+  paginationSchema,
+  validateRequest,
+} from "@/lib/validations";
 
 // GET /api/projects - Get user's projects
 export async function GET(request: NextRequest) {
@@ -13,8 +18,14 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "12");
+    const paginationValidation = validateRequest(paginationSchema, {
+      page: searchParams.get("page"),
+      limit: searchParams.get("limit"),
+    });
+
+    const { page, limit } = paginationValidation.success
+      ? paginationValidation.data
+      : { page: 1, limit: 12 };
     const skip = (page - 1) * limit;
 
     const [projects, total] = await Promise.all([
@@ -27,6 +38,7 @@ export async function GET(request: NextRequest) {
           _count: {
             select: { assets: true },
           },
+          brandAssets: true,
         },
       }),
       prisma.project.count({
@@ -64,20 +76,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { name, description } = await request.json();
-
-    if (!name || name.trim().length === 0) {
-      return NextResponse.json(
-        { error: "Project name is required" },
-        { status: 400 }
-      );
+    const body = await request.json();
+    const validation = validateRequest(createProjectSchema, body);
+    if (!validation.success) {
+      return validation.error;
     }
+
+    const { name, description, websiteUrl } = validation.data;
 
     const project = await prisma.project.create({
       data: {
         userId: session.user.id,
-        name: name.trim(),
-        description: description?.trim() || null,
+        name,
+        description,
+        websiteUrl,
+        extractionStatus: websiteUrl ? null : null,
       },
     });
 

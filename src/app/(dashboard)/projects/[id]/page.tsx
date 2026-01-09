@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { BrandEditor } from "@/components/brand/brand-editor";
 
 interface Asset {
   id: string;
@@ -16,12 +17,33 @@ interface Asset {
   createdAt: string;
 }
 
+interface BrandAsset {
+  id: string;
+  type: "LOGO" | "FOUNDER" | "MASCOT" | "PRODUCT" | "OTHER";
+  url: string;
+  description?: string | null;
+}
+
+interface BrandData {
+  colors?: string[];
+  brandName?: string;
+  tagline?: string;
+  description?: string;
+  voice?: string;
+  industry?: string;
+  productCategories?: string[];
+}
+
 interface Project {
   id: string;
   name: string;
   description: string | null;
+  websiteUrl?: string | null;
+  brandData?: BrandData | null;
+  extractionStatus?: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | null;
   assetCount: number;
   assets: Asset[];
+  brandAssets?: BrandAsset[];
   createdAt: string;
   updatedAt: string;
 }
@@ -32,6 +54,7 @@ export default function ProjectDetailPage() {
   const [project, setProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isExtracting, setIsExtracting] = useState(false);
 
   useEffect(() => {
     if (params.id) {
@@ -77,6 +100,148 @@ export default function ProjectDetailPage() {
       day: "numeric",
       year: "numeric",
     });
+  };
+
+  const handleSaveBrandData = async (brandData: BrandData) => {
+    try {
+      const res = await fetch(`/api/projects/${params.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ brandData }),
+      });
+
+      if (!res.ok) throw new Error("Failed to save brand data");
+
+      const updated = await res.json();
+      setProject(updated);
+    } catch (error) {
+      console.error("Save brand data error:", error);
+      alert("Failed to save brand data");
+    }
+  };
+
+  const handleExtractBrand = async () => {
+    if (!project?.websiteUrl) {
+      alert("No website URL provided. Please add a website URL first.");
+      return;
+    }
+
+    setIsExtracting(true);
+    try {
+      const res = await fetch(`/api/projects/${params.id}/extract-brand`, {
+        method: "POST",
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to extract brand data");
+      }
+
+      // Refresh project data
+      const projectRes = await fetch(`/api/projects/${params.id}`);
+      const updatedProject = await projectRes.json();
+      setProject(updatedProject);
+
+      alert("Brand data extracted successfully!");
+    } catch (error) {
+      console.error("Extract brand error:", error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Failed to extract brand data"
+      );
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
+  const handleUploadAsset = async (data: {
+    file: File;
+    type: string;
+    description: string;
+    tags: string[];
+  }) => {
+    try {
+      // Convert file to base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(data.file);
+      });
+
+      // Upload to storage via API
+      const res = await fetch(`/api/projects/${params.id}/upload-asset`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: data.file.name,
+          fileData: base64,
+          contentType: data.file.type,
+          assetType: data.type,
+          description: data.description,
+          tags: data.tags,
+        }),
+      });
+
+      if (!res.ok) {
+        let message = "Failed to upload asset";
+        try {
+          const resData = await res.json();
+          if (resData?.error) message = String(resData.error);
+        } catch {
+          try {
+            const text = await res.text();
+            if (text) message = text;
+          } catch {
+            // ignore
+          }
+        }
+        throw new Error(`${message} (HTTP ${res.status})`);
+      }
+
+      // Refresh project data to show new asset
+      const projectRes = await fetch(`/api/projects/${params.id}`);
+      const updatedProject = await projectRes.json();
+      setProject(updatedProject);
+
+      alert("Asset uploaded successfully!");
+    } catch (error) {
+      console.error("Upload asset error:", error);
+      alert(
+        error instanceof Error ? error.message : "Failed to upload asset"
+      );
+    }
+  };
+
+  const handleDeleteAsset = async (assetId: string) => {
+    if (!confirm("Are you sure you want to delete this asset?")) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/projects/${params.id}/delete-asset/${assetId}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to delete asset");
+      }
+
+      // Refresh project data
+      const projectRes = await fetch(`/api/projects/${params.id}`);
+      const updatedProject = await projectRes.json();
+      setProject(updatedProject);
+
+      alert("Asset deleted successfully!");
+    } catch (error) {
+      console.error("Delete asset error:", error);
+      alert(
+        error instanceof Error ? error.message : "Failed to delete asset"
+      );
+    }
   };
 
   if (isLoading) {
@@ -157,6 +322,20 @@ export default function ProjectDetailPage() {
           </Button>
         </div>
       </div>
+
+      {/* Brand Data Section */}
+      {project.websiteUrl && (
+        <BrandEditor
+          projectId={project.id}
+          brandData={project.brandData}
+          brandAssets={project.brandAssets}
+          onSave={handleSaveBrandData}
+          onExtractBrand={handleExtractBrand}
+          onUploadAsset={handleUploadAsset}
+          onDeleteAsset={handleDeleteAsset}
+          extracting={isExtracting || project.extractionStatus === "PROCESSING"}
+        />
+      )}
 
       {/* Assets Grid */}
       {project.assets.length === 0 ? (
