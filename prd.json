@@ -331,9 +331,11 @@
         "Ensure mobile readable formatting",
         "Review with legal counsel if possible"
       ],
-      "passes": false,
+      "passes": true,
       "priority": "P0",
-      "estimatedComplexity": "medium"
+      "estimatedComplexity": "medium",
+      "completedAt": "2026-01-09",
+      "notes": "Created (legal) route group with layout and /terms page. Comprehensive ToS with 12 sections covering service description, account registration, credit system/payments, user obligations, IP rights, third-party services, limitation of liability, disclaimer of warranties, termination, changes to terms, governing law, and contact info. Brutalist design with heavy borders, bold typography."
     },
     {
       "id": "LEGAL-002",

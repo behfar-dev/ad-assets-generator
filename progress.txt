@@ -151,3 +151,39 @@ Each completed task should be logged with:
 - `src/app/api/generate/image/route.ts`
 - `src/app/api/generate/video/route.ts`
 - `src/app/api/generate/copy/route.ts`
+
+---
+
+### Iteration 7 - LEGAL-001: Terms of Service page
+**Status:** Completed
+**Task:** Create Terms of Service page
+
+**Changes:**
+- Created `src/app/(legal)/layout.tsx` - Legal pages layout with header/footer
+- Created `src/app/(legal)/terms/page.tsx` - Comprehensive Terms of Service
+
+**ToS Sections:**
+1. Description of Service
+2. Account Registration
+3. Credit System and Payment (credits, purchases, refunds, expiration)
+4. User Obligations (prohibited activities)
+5. Intellectual Property Rights (our content, generated content, input content)
+6. Third-Party Services
+7. Limitation of Liability
+8. Disclaimer of Warranties
+9. Termination
+10. Changes to Terms
+11. Governing Law
+12. Contact Information
+
+**Decisions:**
+- Created new (legal) route group for standalone legal pages
+- Layout includes branded header with back-to-home link
+- Footer links to both Terms and Privacy pages
+- Brutalist design: heavy borders, bold uppercase headings, primary-colored accents
+- Added last updated date and company contact email
+- Mobile-readable with responsive typography
+
+**Files changed:**
+- `src/app/(legal)/layout.tsx` (new)
+- `src/app/(legal)/terms/page.tsx` (new)
