@@ -419,3 +419,48 @@ Each completed task should be logged with:
 - `package.json` (added jszip dependency)
 - `src/components/asset/bulk-actions-toolbar.tsx` (new)
 - `src/app/(dashboard)/projects/[id]/page.tsx`
+
+---
+
+### Iteration 14 - UX-001: First-time user onboarding flow with product tour
+**Status:** Completed
+**Task:** Create onboarding modal shown on first login with step-by-step guide
+
+**Changes:**
+1. **Schema update** - Added `onboardingCompleted` Boolean field to User model in Prisma
+
+2. **Created `src/components/onboarding/onboarding-modal.tsx`** - Main onboarding component:
+   - 5-step guided tour: Welcome, Create Project, Extract Brand, Generate Assets, Download
+   - Step-by-step navigation with progress dots
+   - Each step shows relevant icon, title, description, and detailed content
+   - Skip tour and Next/Back buttons
+   - Brutalist design: heavy borders, bold typography, primary color accents
+   - Mobile responsive with max-w-[95vw] and overflow handling
+
+3. **Created `src/components/onboarding/onboarding-wrapper.tsx`** - Wrapper component:
+   - Checks onboarding status via API on mount
+   - Shows modal only for authenticated users who haven't completed onboarding
+   - Handles loading states gracefully
+
+4. **Created `src/app/api/user/onboarding/route.ts`** - API endpoint:
+   - GET: Returns onboardingCompleted status
+   - POST: Updates onboardingCompleted flag
+
+5. **Updated dashboard layout** to include OnboardingWrapper
+
+6. **Updated settings page** with "Restart Product Tour" option
+
+**Decisions:**
+- Used client-side status check to avoid blocking page render
+- Skip tour marks as completed (not dismissed) - simpler UX
+- Restart tour sets completed=false and redirects to dashboard
+- No tooltips/highlights on actual UI elements (deferred for v2 if needed)
+- Progress dots are clickable for direct step navigation
+
+**Files changed:**
+- `prisma/schema.prisma` (added onboardingCompleted field)
+- `src/components/onboarding/onboarding-modal.tsx` (new)
+- `src/components/onboarding/onboarding-wrapper.tsx` (new)
+- `src/app/api/user/onboarding/route.ts` (new)
+- `src/app/(dashboard)/layout.tsx`
+- `src/app/(dashboard)/settings/page.tsx`

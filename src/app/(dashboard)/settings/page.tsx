@@ -5,9 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useSession, signOut } from "next-auth/react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function SettingsPage() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState<string | null>(null);
   const [message, setMessage] = useState<{
     type: "success" | "error";
@@ -295,6 +297,49 @@ export default function SettingsPage() {
             </div>
             <Button variant="outline" size="sm" disabled>
               Coming Soon
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Product Tour */}
+      <Card className="border-4 border-foreground">
+        <CardHeader>
+          <CardTitle>Product Tour</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between border-4 border-foreground/20 p-4">
+            <div>
+              <p className="font-bold">Restart Product Tour</p>
+              <p className="text-sm text-muted-foreground">
+                View the onboarding guide again to learn about features
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                setIsLoading("tour");
+                try {
+                  await fetch("/api/user/onboarding", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ completed: false }),
+                  });
+                  router.push("/dashboard");
+                  router.refresh();
+                } catch (error) {
+                  setMessage({
+                    type: "error",
+                    text: "Failed to restart tour",
+                  });
+                } finally {
+                  setIsLoading(null);
+                }
+              }}
+              disabled={isLoading === "tour"}
+            >
+              {isLoading === "tour" ? "Restarting..." : "Restart Tour"}
             </Button>
           </div>
         </CardContent>

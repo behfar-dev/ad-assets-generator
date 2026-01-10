@@ -2,6 +2,7 @@ import { SessionProvider } from "@/components/providers/session-provider";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { DashboardFooter } from "@/components/dashboard/footer";
 import { LowCreditWarning } from "@/components/credits/low-credit-warning";
+import { OnboardingWrapper } from "@/components/onboarding/onboarding-wrapper";
 
 export default function DashboardLayout({
   children,
@@ -15,6 +16,7 @@ export default function DashboardLayout({
         <main className="flex-1 container mx-auto px-4 py-8">{children}</main>
         <DashboardFooter />
         <LowCreditWarning threshold={5} />
+        <OnboardingWrapper />
       </div>
     </SessionProvider>
   );

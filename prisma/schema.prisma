@@ -12,17 +12,18 @@ datasource db {
 
 // User Management
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  emailVerified DateTime?
-  name          String?
-  image         String?
-  passwordHash  String?
-  bio           String?
-  company       String?
-  role          UserRole  @default(USER)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                  String    @id @default(cuid())
+  email               String    @unique
+  emailVerified       DateTime?
+  name                String?
+  image               String?
+  passwordHash        String?
+  bio                 String?
+  company             String?
+  role                UserRole  @default(USER)
+  onboardingCompleted Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   // Relations
   accounts           Account[]

@@ -203,9 +203,11 @@
         "Add 'Restart tour' option in settings",
         "Test onboarding flow from fresh account"
       ],
-      "passes": false,
+      "passes": true,
       "priority": "P1",
-      "estimatedComplexity": "high"
+      "estimatedComplexity": "high",
+      "completedAt": "2026-01-10",
+      "notes": "Created 5-step onboarding modal with Welcome, Create Project, Extract Brand, Generate Assets, Download steps. Added onboardingCompleted field to User model, API endpoint at /api/user/onboarding, OnboardingWrapper in dashboard layout, and Restart Tour option in settings. Tooltips deferred - modal-based tour sufficient for MVP."
     },
     {
       "id": "DATA-001",
