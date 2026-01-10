@@ -222,3 +222,42 @@ Each completed task should be logged with:
 
 **Files changed:**
 - `src/app/(legal)/privacy/page.tsx` (new)
+
+---
+
+### Iteration 9 - UI-001 & UI-002: Marketing landing page and pricing page
+**Status:** Completed
+**Tasks:**
+- UI-001: Create marketing landing page with brutalist design (verified existing)
+- UI-002: Create dedicated pricing page with credit package details
+
+**Changes:**
+- **UI-001:** Verified existing comprehensive landing page at `src/app/page.tsx`
+  - Hero section with bold typography and value proposition
+  - Features section highlighting 6 key capabilities
+  - "How it works" 4-step section
+  - Pricing section with 3 packages
+  - Social proof bar with company names and stats
+  - CTA section and footer with navigation
+
+- **UI-002:** Created new dedicated pricing page at `src/app/pricing/page.tsx`
+  - Pricing cards for all 4 packages (Starter, Pro, Business, Enterprise)
+  - Cost per credit calculation displayed prominently
+  - Credit costs section showing 1 image = 1 credit, 1 video = 5 credits, etc.
+  - Full feature comparison table with all 14 features
+  - FAQ section with 8 common questions about credits and billing
+  - CTA buttons linking to signup and enterprise sales
+  - Consistent brutalist design with heavy borders, bold typography
+
+- Updated landing page footer to link to /pricing page
+
+**Decisions:**
+- Created pricing page as public route at /pricing (not under dashboard or legal)
+- Added Enterprise tier with "Contact Sales" CTA
+- Feature comparison table highlights Pro tier as most popular
+- FAQ covers credits, expiration, refunds, payment methods
+- Responsive design with grid layouts adjusting for mobile
+
+**Files changed:**
+- `src/app/pricing/page.tsx` (new)
+- `src/app/page.tsx` (updated footer link)
