@@ -22,7 +22,7 @@ for ((i=1; i<=$ITERATIONS; i++)); do
   echo "🔄 Iteration $i/$ITERATIONS"
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-  result=$(claude -p "@prd.json @progress.txt @SAAS_ROADMAP.md
+  result=$(claude --dangerously-skip-permissions -p "@prd.json @progress.txt @SAAS_ROADMAP.md
 
 You are working on the Ad Assets Generator SaaS Platform v1.0.
 
