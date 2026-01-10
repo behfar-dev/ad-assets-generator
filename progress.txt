@@ -464,3 +464,45 @@ Each completed task should be logged with:
 - `src/app/api/user/onboarding/route.ts` (new)
 - `src/app/(dashboard)/layout.tsx`
 - `src/app/(dashboard)/settings/page.tsx`
+
+---
+
+### Iteration 15 - FEAT-001: Generation history page
+**Status:** Completed
+**Task:** Implement generation history page showing all past generations
+
+**Changes:**
+1. **Created `src/app/(dashboard)/history/page.tsx`** - History page:
+   - Timeline view with assets grouped by date
+   - Credits summary cards showing total spent, plus breakdown by type (image/video/copy)
+   - Filter bar with: type dropdown, project dropdown, date range pickers, search input
+   - URL params persistence for all filters
+   - Pagination with previous/next buttons
+   - Asset cards showing preview, type badge, aspect ratio, time, prompt, project link, credit cost
+   - Empty state for no results with clear filters option
+   - Brutalist design consistent with rest of app
+   - Mobile responsive layout
+
+2. **Created `src/app/api/assets/history/route.ts`** - History API endpoint:
+   - Pagination with page/limit params
+   - Filter by type (IMAGE/VIDEO/COPY)
+   - Filter by projectId
+   - Search by prompt keywords (case-insensitive)
+   - Date range filtering (dateFrom/dateTo)
+   - Credit aggregation by asset type using Prisma groupBy
+   - Returns assets, pagination info, and creditsSummary object
+
+3. **Updated `src/components/dashboard/header.tsx`**:
+   - Added History link to main navigation (desktop and mobile)
+
+**Decisions:**
+- Created separate /api/assets/history endpoint rather than modifying existing /api/assets
+- Used Prisma groupBy for efficient credit aggregation
+- URL params for filter state enables bookmarking/sharing filtered views
+- Timeline grouping by date provides clear chronological view
+- Credit summary shows totals for filtered results, not all-time
+
+**Files changed:**
+- `src/app/(dashboard)/history/page.tsx` (new)
+- `src/app/api/assets/history/route.ts` (new)
+- `src/components/dashboard/header.tsx`

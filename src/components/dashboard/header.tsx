@@ -46,6 +46,7 @@ export function DashboardHeader() {
     { href: "/dashboard", label: "Dashboard" },
     { href: "/projects", label: "Projects" },
     { href: "/generate", label: "Generate" },
+    { href: "/history", label: "History" },
   ];
 
   const isActiveLink = (href: string) => pathname === href;

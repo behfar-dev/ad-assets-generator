@@ -290,9 +290,11 @@
         "Show total credits spent in time period",
         "Test with large number of historical generations"
       ],
-      "passes": false,
+      "passes": true,
       "priority": "P1",
-      "estimatedComplexity": "high"
+      "estimatedComplexity": "high",
+      "completedAt": "2026-01-10",
+      "notes": "Created /dashboard/history page with timeline view, date grouping, credits summary cards, filters for type/project/date range, search by prompt. Added /api/assets/history endpoint with pagination, search, date filtering, and credit aggregation by type. Added History link to navigation."
     },
     {
       "id": "FEAT-002",
