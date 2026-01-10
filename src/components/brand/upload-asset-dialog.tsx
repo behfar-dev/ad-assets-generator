@@ -105,7 +105,7 @@ export function UploadAssetDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl border-4 border-foreground">
+      <DialogContent className="w-full max-w-[95vw] sm:max-w-md md:max-w-xl border-4 border-foreground max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-black uppercase">
             Upload Brand Asset

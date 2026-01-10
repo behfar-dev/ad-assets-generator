@@ -29,6 +29,7 @@ import {
   getCreativeDirection,
   buildImageGenerationPrompt,
   buildVideoGenerationPrompt,
+  type BrandContextInfo,
 } from "@/lib/creative-direction";
 import {
   Select,
@@ -104,6 +105,56 @@ function fileToBase64(file: File): Promise<string> {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+}
+
+// Convert SVG or unsupported formats into PNG to keep FAL happy
+async function convertFileToPng(file: File): Promise<File> {
+  const dataUrl = await fileToBase64(file);
+
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => {
+      const width = image.naturalWidth || image.width || 1024;
+      const height = image.naturalHeight || image.height || 1024;
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        reject(new Error("Canvas context not available"));
+        return;
+      }
+
+      ctx.drawImage(image, 0, 0, width, height);
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error("Failed to convert image to PNG"));
+          return;
+        }
+        const filename = file.name.replace(/\.[^/.]+$/, "");
+        resolve(new File([blob], `${filename}.png`, { type: 'image/png' }));
+      }, 'image/png');
+    };
+    image.onerror = reject;
+    image.src = dataUrl;
+  });
+}
+
+async function ensureRasterImage(file: File): Promise<File> {
+  const type = file.type?.toLowerCase() || "";
+  const name = file.name?.toLowerCase() || "";
+
+  if (type === 'image/svg+xml' || name.endsWith('.svg')) {
+    try {
+      return await convertFileToPng(file);
+    } catch (err) {
+      console.error("Failed to convert SVG to PNG, using original file:", err);
+      return file;
+    }
+  }
+
+  return file;
 }
 
 // Tool Definitions (OpenAI Format)
@@ -239,12 +290,7 @@ export default function GeneratePage() {
   const [error, setError] = useState<string | null>(null);
 
   // Results
-  const [brandContext, setBrandContext] = useState<{
-    colors?: string[];
-    mood?: string;
-    subject?: string;
-    brandName?: string;
-  } | null>(null);
+  const [brandContext, setBrandContext] = useState<BrandContextInfo | null>(null);
   const [generatedAssets, setGeneratedAssets] = useState<Asset[]>([]);
   const [adCopy, setAdCopy] = useState<{
     headline?: string;
@@ -483,7 +529,8 @@ export default function GeneratePage() {
 
     const uploadPromises = files.map(async (file) => {
       try {
-        const base64 = await fileToBase64(file);
+        const normalizedFile = await ensureRasterImage(file);
+        const base64 = await fileToBase64(normalizedFile);
         const blob = base64ToBlob(base64);
         const url = await fal.storage.upload(blob);
         return url;
@@ -645,7 +692,7 @@ export default function GeneratePage() {
 
       const result: any = await fal.subscribe("fal-ai/nano-banana-pro/edit", {
         input: {
-          prompt: buildImageGenerationPrompt({ creativeDirectionId, prompt }),
+          prompt: buildImageGenerationPrompt({ creativeDirectionId, prompt, brandContext }),
           image_urls: sourceImageUrls,
           aspect_ratio: aspectRatio,
           num_inference_steps: 28,
@@ -710,6 +757,7 @@ export default function GeneratePage() {
           prompt: buildImageGenerationPrompt({
             creativeDirectionId,
             prompt: `Cinematic, clean composition, no text, ${prompt}`,
+            brandContext,
           }),
           image_urls: sourceImageUrls,
           aspect_ratio: "16:9",
@@ -726,6 +774,7 @@ export default function GeneratePage() {
       const videoPrompt = buildVideoGenerationPrompt({
         creativeDirectionId,
         prompt,
+        brandContext,
       });
       const result: any = await fal.subscribe("fal-ai/kling-video/v2.6/pro/image-to-video", {
         input: {
@@ -1028,6 +1077,7 @@ export default function GeneratePage() {
         const videoPrompt = buildVideoGenerationPrompt({
           creativeDirectionId,
           prompt,
+          brandContext,
         });
         const result: any = await fal.subscribe("fal-ai/kling-video/v2.6/pro/image-to-video", {
           input: {
@@ -1081,7 +1131,7 @@ export default function GeneratePage() {
 
         const result: any = await fal.subscribe("fal-ai/nano-banana-pro/edit", {
           input: {
-            prompt: buildImageGenerationPrompt({ creativeDirectionId, prompt }),
+            prompt: buildImageGenerationPrompt({ creativeDirectionId, prompt, brandContext }),
             image_urls: [sourceAsset.url],
             aspect_ratio: aspectRatio,
             num_inference_steps: 28,
@@ -2120,7 +2170,7 @@ export default function GeneratePage() {
 
       {/* Single Asset Generation Dialog */}
       <Dialog open={showSingleAssetDialog} onOpenChange={setShowSingleAssetDialog}>
-        <DialogContent className="border-4 border-foreground max-w-md">
+        <DialogContent className="border-4 border-foreground w-full max-w-[95vw] sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Generate Single Asset</DialogTitle>
             <DialogDescription>Create a new asset with custom settings</DialogDescription>
@@ -2219,16 +2269,16 @@ export default function GeneratePage() {
 
       {/* Asset Variant Generation Dialog */}
       <Dialog open={showAssetVariantDialog} onOpenChange={setShowAssetVariantDialog}>
-        <DialogContent className="border-4 border-foreground max-w-6xl">
+        <DialogContent className="border-4 border-foreground w-full max-w-[95vw] sm:max-w-xl lg:max-w-4xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Asset Options</DialogTitle>
             <DialogDescription>Download or create a variant based on this image</DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mt-4">
             {/* Left: Source Image Preview */}
             {selectedAsset && (
               <div className="space-y-4">
-                <div className="relative bg-muted overflow-hidden border-4 border-foreground flex items-center justify-center min-h-[400px]">
+                <div className="relative bg-muted overflow-hidden border-4 border-foreground flex items-center justify-center min-h-[200px] sm:min-h-[300px] lg:min-h-[400px]">
                   <img
                     src={selectedAsset.url}
                     alt="Source"
@@ -2379,7 +2429,7 @@ export default function GeneratePage() {
 
       {/* History Dialog */}
       <Dialog open={showHistory} onOpenChange={setShowHistory}>
-        <DialogContent className="border-4 border-foreground max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogContent className="border-4 border-foreground w-full max-w-[95vw] sm:max-w-lg md:max-w-2xl lg:max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
               <span>Generation History</span>
@@ -2474,7 +2524,7 @@ export default function GeneratePage() {
 
       {/* Ad Copy Generation Dialog */}
       <Dialog open={showAdCopyDialog} onOpenChange={setShowAdCopyDialog}>
-        <DialogContent className="border-4 border-foreground max-w-md">
+        <DialogContent className="border-4 border-foreground w-full max-w-[95vw] sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Generate Ad Copy</DialogTitle>
             <DialogDescription>Create compelling advertising copy</DialogDescription>

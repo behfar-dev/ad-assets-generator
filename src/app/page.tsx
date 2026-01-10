@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import Link from "next/link";
+import { LandingNav } from "@/components/landing/landing-nav";
 
 export const metadata: Metadata = {
   title: "Ad Assets Generator | AI-Powered Creative for Modern Brands",
@@ -141,45 +142,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur border-b-4 border-foreground">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary" />
-              <span className="text-xl font-black tracking-tight">AD ASSETS</span>
-            </div>
-            <div className="hidden md:flex items-center gap-8">
-              <a href="#features" className="text-sm font-bold uppercase tracking-wide hover:text-primary transition-colors">
-                Features
-              </a>
-              <a href="#pricing" className="text-sm font-bold uppercase tracking-wide hover:text-primary transition-colors">
-                Pricing
-              </a>
-              <a href="#how-it-works" className="text-sm font-bold uppercase tracking-wide hover:text-primary transition-colors">
-                How It Works
-              </a>
-              <Link href="/login" className="text-sm font-bold uppercase tracking-wide hover:text-primary transition-colors">
-                Login
-              </Link>
-              <Link
-                href="/signup"
-                className="px-6 py-2 bg-primary text-primary-foreground font-bold uppercase tracking-wide border-4 border-foreground hover:bg-primary/90 transition-colors"
-              >
-                Get Started
-              </Link>
-            </div>
-            {/* Mobile menu button */}
-            <div className="md:hidden">
-              <Link
-                href="/signup"
-                className="px-4 py-2 bg-primary text-primary-foreground font-bold text-sm uppercase tracking-wide border-2 border-foreground"
-              >
-                Start
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <LandingNav />
 
       {/* Hero Section */}
       <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
@@ -214,20 +177,20 @@ export default function LandingPage() {
                   See How It Works
                 </a>
               </div>
-              <div className="flex items-center gap-8 pt-4">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 sm:gap-8 pt-4">
                 <div className="text-center">
-                  <div className="text-3xl font-black">1M+</div>
-                  <div className="text-sm text-muted-foreground uppercase tracking-wide">Assets Generated</div>
+                  <div className="text-2xl sm:text-3xl font-black">1M+</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground uppercase tracking-wide">Assets Generated</div>
                 </div>
-                <div className="w-px h-12 bg-border" />
+                <div className="hidden sm:block w-px h-12 bg-border" />
                 <div className="text-center">
-                  <div className="text-3xl font-black">10K+</div>
-                  <div className="text-sm text-muted-foreground uppercase tracking-wide">Active Users</div>
+                  <div className="text-2xl sm:text-3xl font-black">10K+</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground uppercase tracking-wide">Active Users</div>
                 </div>
-                <div className="w-px h-12 bg-border" />
+                <div className="hidden sm:block w-px h-12 bg-border" />
                 <div className="text-center">
-                  <div className="text-3xl font-black">4.9★</div>
-                  <div className="text-sm text-muted-foreground uppercase tracking-wide">User Rating</div>
+                  <div className="text-2xl sm:text-3xl font-black">4.9★</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground uppercase tracking-wide">User Rating</div>
                 </div>
               </div>
             </div>
@@ -350,13 +313,15 @@ export default function LandingPage() {
               Pay for what you use. No subscriptions, no hidden fees.
               Credits never expire.
             </p>
-            <div className="mt-6 inline-flex items-center gap-4 px-6 py-3 border-4 border-foreground bg-card">
+            <div className="mt-6 inline-flex flex-col sm:flex-row items-center gap-2 sm:gap-4 px-4 sm:px-6 py-3 border-4 border-foreground bg-card text-sm sm:text-base">
               <span className="font-bold">Credit Costs:</span>
-              <span className="text-muted-foreground">1 image = 1 credit</span>
-              <span className="text-muted-foreground">•</span>
-              <span className="text-muted-foreground">1 video = 5 credits</span>
-              <span className="text-muted-foreground">•</span>
-              <span className="text-muted-foreground">Ad copy = 0.5 credits</span>
+              <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-4">
+                <span className="text-muted-foreground">1 image = 1 credit</span>
+                <span className="hidden sm:inline text-muted-foreground">•</span>
+                <span className="text-muted-foreground">1 video = 5 credits</span>
+                <span className="hidden sm:inline text-muted-foreground">•</span>
+                <span className="text-muted-foreground">Ad copy = 0.5 credits</span>
+              </div>
             </div>
           </div>
           <div className="grid md:grid-cols-3 gap-6">

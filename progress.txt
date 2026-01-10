@@ -261,3 +261,51 @@ Each completed task should be logged with:
 **Files changed:**
 - `src/app/pricing/page.tsx` (new)
 - `src/app/page.tsx` (updated footer link)
+
+---
+
+### Iteration 10 - TEST-001: Mobile responsive design testing and fixes
+**Status:** Completed
+**Task:** Add mobile responsive design testing and fixes
+
+**Changes:**
+1. **Dashboard Header Mobile Navigation** (`src/components/dashboard/header.tsx`):
+   - Separated mobile nav state (`isMobileNavOpen`) from user dropdown state (`isUserMenuOpen`)
+   - Created full mobile navigation drawer with slide-in animation
+   - Added user info section, credit balance, navigation links, account links
+   - Implemented keyboard escape handling, body scroll lock, and route change detection
+   - Added active link highlighting with border-l-4 indicator
+   - Mobile-only sign out button with destructive styling
+   - All navigation links now accessible on mobile devices
+
+2. **Landing Page Mobile Navigation** (`src/components/landing/landing-nav.tsx` - new):
+   - Created dedicated client component for landing page navigation
+   - Added hamburger menu with dropdown panel (not slide-in, simpler for marketing page)
+   - Added visible Login button on mobile (previously hidden)
+   - Anchor links close menu when clicked (smooth scrolling)
+   - Escape key and backdrop click to close
+
+3. **Landing Page Responsive Fixes** (`src/app/page.tsx`):
+   - Hero stats section: Added flex-wrap, responsive gap, hidden separators on mobile
+   - Pricing credit costs info box: Stacks vertically on mobile, hides bullet separators
+
+4. **Dialog/Modal Responsive Fixes**:
+   - All dialogs now use `max-w-[95vw]` on mobile with progressive widths at sm/md/lg
+   - Added `max-h-[85vh]` and `overflow-y-auto` for scrollable content on small screens
+   - Fixed dialogs in generate page (single asset, variant, history, ad copy)
+   - Fixed brand-asset-selector and upload-asset-dialog components
+
+**Decisions:**
+- Dashboard uses slide-in drawer (full navigation experience)
+- Landing page uses dropdown panel (simpler, less intrusive for marketing)
+- Maintained brutalist design aesthetic across all mobile components
+- Used consistent 95vw max-width on mobile to prevent edge overflow
+- Progressive responsive breakpoints: sm → md → lg for dialogs
+
+**Files changed:**
+- `src/components/dashboard/header.tsx` (major rewrite)
+- `src/components/landing/landing-nav.tsx` (new)
+- `src/app/page.tsx` (responsive fixes + landing nav integration)
+- `src/app/(dashboard)/generate/page.tsx` (dialog responsive classes)
+- `src/components/brand/brand-asset-selector.tsx` (dialog responsive classes)
+- `src/components/brand/upload-asset-dialog.tsx` (dialog responsive classes)
