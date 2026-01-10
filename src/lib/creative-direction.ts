@@ -154,20 +154,64 @@ export function getCreativeDirection(id?: string | null): CreativeDirection {
   return found ?? CREATIVE_DIRECTIONS[0];
 }
 
+export type BrandContextInfo = {
+  colors?: string[];
+  mood?: string;
+  subject?: string;
+  brandName?: string;
+};
+
+function formatBrandContextInstruction(
+  brandContext?: BrandContextInfo | null
+): string {
+  if (!brandContext) return "";
+
+  const parts: string[] = [];
+
+  if (brandContext.brandName) {
+    parts.push(`brand name ${brandContext.brandName}`);
+  }
+
+  if (brandContext.subject) {
+    parts.push(`subject focus ${brandContext.subject}`);
+  }
+
+  if (brandContext.mood) {
+    parts.push(`tone ${brandContext.mood}`);
+  }
+
+  if (brandContext.colors && brandContext.colors.length > 0) {
+    parts.push(`color palette ${brandContext.colors.join(", ")}`);
+  }
+
+  return parts.length > 0
+    ? `Stay on brand: ${parts.join("; ")}.`
+    : "";
+}
+
 export function buildImageGenerationPrompt(args: {
   creativeDirectionId?: string | null;
   prompt: string;
+  brandContext?: BrandContextInfo | null;
 }): string {
   const dir = getCreativeDirection(args.creativeDirectionId);
-  return `${dir.imageGenerationPrefix} ${args.prompt}`.trim();
+  const brandInstruction = formatBrandContextInstruction(args.brandContext);
+  return [dir.imageGenerationPrefix, args.prompt, brandInstruction]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
 }
 
 export function buildVideoGenerationPrompt(args: {
   creativeDirectionId?: string | null;
   prompt: string;
+  brandContext?: BrandContextInfo | null;
 }): string {
   const dir = getCreativeDirection(args.creativeDirectionId);
-  return `${dir.videoGenerationPrefix} ${args.prompt}`.trim();
+  const brandInstruction = formatBrandContextInstruction(args.brandContext);
+  return [dir.videoGenerationPrefix, args.prompt, brandInstruction]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
 }
-
 

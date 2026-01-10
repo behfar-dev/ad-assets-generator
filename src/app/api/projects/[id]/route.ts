@@ -100,11 +100,22 @@ export async function PATCH(
         brandData: brandData !== undefined ? brandData : existingProject.brandData,
       },
       include: {
-        brandAssets: true,
+        assets: {
+          orderBy: { createdAt: "desc" },
+        },
+        brandAssets: {
+          orderBy: { createdAt: "desc" },
+        },
+        _count: {
+          select: { assets: true },
+        },
       },
     });
 
-    return NextResponse.json(updatedProject);
+    return NextResponse.json({
+      ...updatedProject,
+      assetCount: updatedProject._count.assets,
+    });
   } catch (error) {
     console.error("Update project error:", error);
     return NextResponse.json(

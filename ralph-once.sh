@@ -8,7 +8,7 @@ set -e
 echo "🎯 Running HITL Ralph (single iteration)..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-claude -p "@prd.json @progress.txt @SAAS_ROADMAP.md
+claude --dangerously-skip-permissions -p "@prd.json @progress.txt @SAAS_ROADMAP.md
 
 You are working on the Ad Assets Generator SaaS Platform v1.0.
 
