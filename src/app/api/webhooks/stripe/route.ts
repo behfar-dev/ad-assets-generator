@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import {
+  generateInvoiceNumber,
+  generateInvoicePDF,
+  createInvoiceData,
+} from "@/lib/invoice";
+import { uploadToStorage } from "@/lib/supabase";
 
 export async function POST(request: NextRequest) {
   try {
@@ -59,12 +65,63 @@ export async function POST(request: NextRequest) {
           break;
         }
 
-        // Update payment status
+        // Get the payment record and user info
+        const payment = await prisma.payment.findFirst({
+          where: { stripeSessionId: session.id },
+        });
+
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { name: true, email: true },
+        });
+
+        if (!payment || !user) {
+          console.error("Payment or user not found");
+          break;
+        }
+
+        // Generate invoice number and PDF
+        const invoiceNumber = generateInvoiceNumber(payment.id, payment.createdAt);
+        let invoiceUrl: string | null = null;
+
+        try {
+          const invoiceData = createInvoiceData(
+            {
+              id: payment.id,
+              amount: payment.amount,
+              currency: payment.currency,
+              creditsGranted: credits,
+              createdAt: payment.createdAt,
+              invoiceNumber,
+            },
+            user
+          );
+
+          const pdfBuffer = generateInvoicePDF(invoiceData);
+
+          // Upload to Supabase Storage
+          const fileName = `invoices/${userId}/${invoiceNumber}.pdf`;
+          invoiceUrl = await uploadToStorage(
+            "invoices",
+            fileName,
+            pdfBuffer,
+            "application/pdf"
+          );
+
+          console.log(`Invoice generated: ${invoiceNumber} at ${invoiceUrl}`);
+        } catch (invoiceError) {
+          // Log error but don't fail the payment
+          console.error("Failed to generate invoice:", invoiceError);
+        }
+
+        // Update payment status with invoice info
         await prisma.payment.updateMany({
           where: { stripeSessionId: session.id },
           data: {
             status: "COMPLETED",
             stripePaymentId: session.id,
+            invoiceNumber,
+            invoiceUrl,
           },
         });
 
@@ -92,6 +149,7 @@ export async function POST(request: NextRequest) {
             metadata: {
               stripeSessionId: session.id,
               packageId: session.metadata?.packageId,
+              invoiceNumber,
             },
           },
         });

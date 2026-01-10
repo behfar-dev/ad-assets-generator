@@ -506,3 +506,52 @@ Each completed task should be logged with:
 - `src/app/(dashboard)/history/page.tsx` (new)
 - `src/app/api/assets/history/route.ts` (new)
 - `src/components/dashboard/header.tsx`
+
+---
+
+### Iteration 16 - PAY-002: Invoice generation for credit purchases
+**Status:** Completed
+**Task:** Add invoice generation for credit purchases
+
+**Changes:**
+1. **Installed jspdf** for PDF generation
+
+2. **Updated Prisma schema** (`prisma/schema.prisma`):
+   - Added `invoiceNumber` and `invoiceUrl` fields to Payment model
+
+3. **Created `src/lib/invoice.ts`** - Invoice generation utilities:
+   - `generateInvoiceNumber` - Creates INV-YYYYMMDD-XXXX format
+   - `generateInvoicePDF` - Generates professional PDF invoice using jsPDF
+   - `createInvoiceData` - Creates invoice data structure from payment record
+   - Invoice includes: company header, customer info, line items table, totals, payment info
+
+4. **Updated Stripe webhook** (`src/app/api/webhooks/stripe/route.ts`):
+   - After successful payment, generates invoice PDF
+   - Uploads PDF to Supabase Storage (invoices bucket)
+   - Stores invoiceNumber and invoiceUrl in Payment record
+   - Invoice generation is non-blocking (logs error but doesn't fail payment)
+
+5. **Created `/api/invoices` endpoint** (`src/app/api/invoices/route.ts`):
+   - Returns completed payments with invoice info for authenticated user
+   - Supports pagination
+
+6. **Updated billing page** (`src/app/(dashboard)/billing/page.tsx`):
+   - Added Purchase History section with invoice downloads
+   - Shows invoice number, amount, credits purchased, date
+   - Download Invoice button opens PDF in new tab
+   - Brutalist design with heavy borders, bold typography
+
+**Decisions:**
+- Used jsPDF for server-side PDF generation (no external dependencies)
+- Invoice stored in Supabase Storage under invoices/{userId}/{invoiceNumber}.pdf
+- Invoice number format: INV-YYYYMMDD-SUFFIX (suffix from payment ID)
+- Invoice generation doesn't block payment completion (error-resilient)
+- Purchase History section separate from Transaction History (clearer UX)
+
+**Files changed:**
+- `package.json` (added jspdf)
+- `prisma/schema.prisma` (added invoiceNumber, invoiceUrl to Payment)
+- `src/lib/invoice.ts` (new)
+- `src/app/api/webhooks/stripe/route.ts`
+- `src/app/api/invoices/route.ts` (new)
+- `src/app/(dashboard)/billing/page.tsx`

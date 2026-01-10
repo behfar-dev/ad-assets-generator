@@ -150,6 +150,8 @@ model Payment {
   stripePaymentId String?       @unique
   stripeSessionId String?       @unique
   creditsGranted  Int?
+  invoiceNumber   String?       @unique
+  invoiceUrl      String?
   metadata        Json?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt

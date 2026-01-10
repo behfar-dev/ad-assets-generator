@@ -23,6 +23,16 @@ interface Transaction {
   createdAt: string;
 }
 
+interface Invoice {
+  id: string;
+  amount: number;
+  currency: string;
+  creditsGranted: number | null;
+  invoiceNumber: string | null;
+  invoiceUrl: string | null;
+  createdAt: string;
+}
+
 function BillingContent() {
   const searchParams = useSearchParams();
   const success = searchParams.get("success");
@@ -31,6 +41,7 @@ function BillingContent() {
 
   const [packages, setPackages] = useState<CreditPackage[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState<string | null>(null);
   const [message, setMessage] = useState<{
     type: "success" | "error";
@@ -61,6 +72,12 @@ function BillingContent() {
     fetch("/api/credits/history?limit=10")
       .then((res) => res.json())
       .then((data) => setTransactions(data.transactions || []))
+      .catch(console.error);
+
+    // Fetch invoices
+    fetch("/api/invoices?limit=10")
+      .then((res) => res.json())
+      .then((data) => setInvoices(data.invoices || []))
       .catch(console.error);
   }, [success, canceled, creditsAdded]);
 
@@ -126,6 +143,22 @@ function BillingContent() {
         return "text-blue-500";
       default:
         return "text-foreground";
+    }
+  };
+
+  const formatCurrency = (amount: number, currency: string) => {
+    const symbols: Record<string, string> = {
+      usd: "$",
+      eur: "€",
+      gbp: "£",
+    };
+    const symbol = symbols[currency.toLowerCase()] || "$";
+    return `${symbol}${amount.toFixed(2)}`;
+  };
+
+  const handleDownloadInvoice = (invoice: Invoice) => {
+    if (invoice.invoiceUrl) {
+      window.open(invoice.invoiceUrl, "_blank");
     }
   };
 
@@ -226,6 +259,78 @@ function BillingContent() {
             </Card>
           ))}
         </div>
+      </div>
+
+      {/* Purchase History with Invoices */}
+      <div className="space-y-4">
+        <h2 className="text-2xl font-black uppercase">Purchase History</h2>
+        <Card className="border-4 border-foreground">
+          {invoices.length === 0 ? (
+            <CardContent className="flex flex-col items-center justify-center p-12">
+              <p className="text-muted-foreground font-medium">
+                No purchases yet
+              </p>
+            </CardContent>
+          ) : (
+            <div className="divide-y-4 divide-foreground/10">
+              {invoices.map((invoice) => (
+                <div
+                  key={invoice.id}
+                  className="flex items-center justify-between p-4"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-bold">
+                        {invoice.creditsGranted || 0} Credits
+                      </p>
+                      {invoice.invoiceNumber && (
+                        <span className="text-xs text-muted-foreground font-mono">
+                          {invoice.invoiceNumber}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {formatDate(invoice.createdAt)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-xl font-black text-green-500">
+                      {formatCurrency(invoice.amount, invoice.currency)}
+                    </div>
+                    {invoice.invoiceUrl ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDownloadInvoice(invoice)}
+                        className="border-2"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="w-4 h-4 mr-2"
+                        >
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                          <polyline points="7 10 12 15 17 10" />
+                          <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        Invoice
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">
+                        No invoice
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
       </div>
 
       {/* Transaction History */}

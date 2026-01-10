@@ -272,9 +272,11 @@
         "Include invoice details: date, amount, credits, payment method",
         "Test invoice generation for all credit packages"
       ],
-      "passes": false,
+      "passes": true,
       "priority": "P1",
-      "estimatedComplexity": "high"
+      "estimatedComplexity": "high",
+      "completedAt": "2026-01-10",
+      "notes": "Created src/lib/invoice.ts with jsPDF for PDF generation. Invoice generated on webhook, uploaded to Supabase Storage. Added invoiceNumber/invoiceUrl to Payment model. Billing page shows Purchase History with invoice download buttons. Invoice includes company header, customer info, line items, payment details."
     },
     {
       "id": "FEAT-001",
