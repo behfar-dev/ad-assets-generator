@@ -164,9 +164,11 @@
         "Test modal on mobile devices",
         "Ensure keyboard navigation works (ESC to close)"
       ],
-      "passes": false,
+      "passes": true,
       "priority": "P1",
-      "estimatedComplexity": "high"
+      "estimatedComplexity": "high",
+      "completedAt": "2026-01-10",
+      "notes": "Created src/components/asset/asset-detail-modal.tsx with large preview, metadata grid, download with proper naming, regenerate variant (navigates to /generate), and delete with inline confirmation. Integrated into project detail page with clickable cards and view details overlay."
     },
     {
       "id": "UI-005",

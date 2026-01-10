@@ -336,3 +336,42 @@ Each completed task should be logged with:
 
 **Files changed:**
 - `src/app/(dashboard)/projects/[id]/page.tsx`
+
+---
+
+### Iteration 12 - UI-004: Asset detail modal with enhanced preview and actions
+**Status:** Completed
+**Task:** Create asset detail modal with enhanced preview and actions
+
+**Changes:**
+1. **Created `src/components/asset/asset-detail-modal.tsx`** - New reusable component:
+   - Large preview area for images, videos (with controls), and copy text
+   - Metadata display: type badge, aspect ratio, created date, prompt
+   - Download button with intelligent file naming (project-type-ratio-date.ext)
+   - Regenerate Variant button (for images/videos) - navigates to generate page with asset data
+   - Delete button with inline confirmation dialog
+   - Keyboard navigation: ESC closes modal (or cancels delete confirmation)
+   - Mobile responsive: max-w-[95vw] on mobile, progressive widths at breakpoints
+   - Brutalist design: heavy borders, bold typography, consistent styling
+
+2. **Updated `src/app/(dashboard)/projects/[id]/page.tsx`**:
+   - Added state for selected asset and modal visibility
+   - Added click handler on asset cards to open modal
+   - Updated hover overlay to show "View Details" with eye icon
+   - Added cursor-pointer and hover:border-primary for visual feedback
+   - Created handleDeleteGeneratedAsset for /api/assets/[id] DELETE
+   - Created handleRegenerateAsset to navigate to generate page with query params
+   - Renamed handleDeleteAsset → handleDeleteBrandAsset for clarity
+
+**Decisions:**
+- Created standalone modal component for reusability
+- Download uses fetch+blob for proper filename, falls back to direct link
+- Regenerate navigates with URL params instead of complex state
+- Delete confirmation is inline (not a separate confirm dialog) for better UX
+- Copy assets show full text in modal preview, not just a truncated version
+- Videos autoplay muted with loop and controls in modal
+- Info grid shows metadata in a scannable format
+
+**Files changed:**
+- `src/components/asset/asset-detail-modal.tsx` (new)
+- `src/app/(dashboard)/projects/[id]/page.tsx`

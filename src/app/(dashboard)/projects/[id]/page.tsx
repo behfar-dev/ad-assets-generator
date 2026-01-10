@@ -14,6 +14,7 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BrandEditor } from "@/components/brand/brand-editor";
+import { AssetDetailModal } from "@/components/asset/asset-detail-modal";
 
 interface Asset {
   id: string;
@@ -90,6 +91,8 @@ export default function ProjectDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
 
   // Filter state from URL params
   const typeFilter = (searchParams.get("type") as AssetType) || "ALL";
@@ -352,7 +355,7 @@ export default function ProjectDetailPage() {
     }
   };
 
-  const handleDeleteAsset = async (assetId: string) => {
+  const handleDeleteBrandAsset = async (assetId: string) => {
     if (!confirm("Are you sure you want to delete this asset?")) {
       return;
     }
@@ -379,6 +382,42 @@ export default function ProjectDetailPage() {
         error instanceof Error ? error.message : "Failed to delete asset"
       );
     }
+  };
+
+  // Handler for opening asset detail modal
+  const handleAssetClick = (asset: Asset) => {
+    setSelectedAsset(asset);
+    setIsAssetModalOpen(true);
+  };
+
+  // Handler for deleting generated assets (from modal)
+  const handleDeleteGeneratedAsset = async (assetId: string) => {
+    const res = await fetch(`/api/assets/${assetId}`, {
+      method: "DELETE",
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || "Failed to delete asset");
+    }
+
+    // Refresh project data
+    const projectRes = await fetch(`/api/projects/${params.id}`);
+    const updatedProject = await projectRes.json();
+    setProject(updatedProject);
+    setSelectedAsset(null);
+  };
+
+  // Handler for regenerating asset (navigate to generate page with asset data)
+  const handleRegenerateAsset = (asset: Asset) => {
+    // Navigate to generate page with asset as reference for variant generation
+    const queryParams = new URLSearchParams({
+      variantFrom: asset.url,
+      variantType: asset.type.toLowerCase(),
+      ...(asset.aspectRatio && { aspectRatio: asset.aspectRatio }),
+      ...(asset.prompt && { prompt: asset.prompt }),
+    });
+    router.push(`/generate?${queryParams.toString()}`);
   };
 
   if (isLoading) {
@@ -469,7 +508,7 @@ export default function ProjectDetailPage() {
           onSave={handleSaveBrandData}
           onExtractBrand={handleExtractBrand}
           onUploadAsset={handleUploadAsset}
-          onDeleteAsset={handleDeleteAsset}
+          onDeleteAsset={handleDeleteBrandAsset}
           extracting={isExtracting || project.extractionStatus === "PROCESSING"}
         />
       )}
@@ -677,7 +716,8 @@ export default function ProjectDetailPage() {
             {filteredAssets.map((asset) => (
             <Card
               key={asset.id}
-              className="border-4 border-foreground overflow-hidden group"
+              className="border-4 border-foreground overflow-hidden group cursor-pointer hover:border-primary transition-colors"
+              onClick={() => handleAssetClick(asset)}
             >
               <div className="relative aspect-square bg-muted">
                 {asset.type === "IMAGE" && (
@@ -710,15 +750,11 @@ export default function ProjectDetailPage() {
                     {asset.type}
                   </span>
                 </div>
-                <div className="absolute inset-0 bg-foreground/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2">
-                  <a
-                    href={asset.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-2 bg-background border-4 border-background hover:bg-accent"
-                  >
+                {/* Hover overlay with quick actions */}
+                <div className="absolute inset-0 bg-foreground/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <div className="text-center">
                     <svg
-                      className="w-5 h-5"
+                      className="w-10 h-10 mx-auto text-background mb-2"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -727,29 +763,19 @@ export default function ProjectDetailPage() {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                       />
-                    </svg>
-                  </a>
-                  <a
-                    href={asset.url}
-                    download
-                    className="p-2 bg-background border-4 border-background hover:bg-accent"
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                       />
                     </svg>
-                  </a>
+                    <span className="text-background text-sm font-bold uppercase">
+                      View Details
+                    </span>
+                  </div>
                 </div>
               </div>
               <CardContent className="p-3">
@@ -762,6 +788,16 @@ export default function ProjectDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Asset Detail Modal */}
+      <AssetDetailModal
+        asset={selectedAsset}
+        open={isAssetModalOpen}
+        onOpenChange={setIsAssetModalOpen}
+        onDelete={handleDeleteGeneratedAsset}
+        onRegenerate={handleRegenerateAsset}
+        projectName={project.name}
+      />
     </div>
   );
 }
