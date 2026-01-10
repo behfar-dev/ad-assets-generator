@@ -144,9 +144,11 @@
         "Test with projects containing many assets",
         "Persist filter state in URL params"
       ],
-      "passes": false,
+      "passes": true,
       "priority": "P1",
-      "estimatedComplexity": "medium"
+      "estimatedComplexity": "medium",
+      "completedAt": "2026-01-10",
+      "notes": "Added filter bar with type/aspect ratio dropdowns, sort options, and search input. Client-side filtering with URL params persistence using useSearchParams. Shows filtered count vs total. Clear filters button when filters active. Empty state when no matches."
     },
     {
       "id": "UI-004",

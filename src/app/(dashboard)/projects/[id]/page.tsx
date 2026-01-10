@@ -1,10 +1,18 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { BrandEditor } from "@/components/brand/brand-editor";
 
 interface Asset {
@@ -48,13 +56,142 @@ interface Project {
   updatedAt: string;
 }
 
+type AssetType = "ALL" | "IMAGE" | "VIDEO" | "COPY";
+type AspectRatioFilter = "ALL" | "9:16" | "3:4" | "1:1" | "16:9" | "4:3";
+type SortOption = "newest" | "oldest" | "type";
+
+const ASPECT_RATIO_OPTIONS: { value: AspectRatioFilter; label: string }[] = [
+  { value: "ALL", label: "All Ratios" },
+  { value: "9:16", label: "9:16 (Vertical)" },
+  { value: "3:4", label: "3:4 (Portrait)" },
+  { value: "1:1", label: "1:1 (Square)" },
+  { value: "4:3", label: "4:3 (Standard)" },
+  { value: "16:9", label: "16:9 (Widescreen)" },
+];
+
+const ASSET_TYPE_OPTIONS: { value: AssetType; label: string }[] = [
+  { value: "ALL", label: "All Types" },
+  { value: "IMAGE", label: "Images" },
+  { value: "VIDEO", label: "Videos" },
+  { value: "COPY", label: "Ad Copy" },
+];
+
+const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+  { value: "newest", label: "Newest First" },
+  { value: "oldest", label: "Oldest First" },
+  { value: "type", label: "By Type" },
+];
+
 export default function ProjectDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [project, setProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
+
+  // Filter state from URL params
+  const typeFilter = (searchParams.get("type") as AssetType) || "ALL";
+  const aspectFilter = (searchParams.get("aspect") as AspectRatioFilter) || "ALL";
+  const sortOption = (searchParams.get("sort") as SortOption) || "newest";
+  const searchQuery = searchParams.get("q") || "";
+
+  // Update URL params without navigation
+  const updateFilters = useCallback(
+    (updates: {
+      type?: AssetType;
+      aspect?: AspectRatioFilter;
+      sort?: SortOption;
+      q?: string;
+    }) => {
+      const newParams = new URLSearchParams(searchParams.toString());
+
+      if (updates.type !== undefined) {
+        if (updates.type === "ALL") {
+          newParams.delete("type");
+        } else {
+          newParams.set("type", updates.type);
+        }
+      }
+      if (updates.aspect !== undefined) {
+        if (updates.aspect === "ALL") {
+          newParams.delete("aspect");
+        } else {
+          newParams.set("aspect", updates.aspect);
+        }
+      }
+      if (updates.sort !== undefined) {
+        if (updates.sort === "newest") {
+          newParams.delete("sort");
+        } else {
+          newParams.set("sort", updates.sort);
+        }
+      }
+      if (updates.q !== undefined) {
+        if (updates.q === "") {
+          newParams.delete("q");
+        } else {
+          newParams.set("q", updates.q);
+        }
+      }
+
+      const queryString = newParams.toString();
+      router.replace(
+        `/projects/${params.id}${queryString ? `?${queryString}` : ""}`,
+        { scroll: false }
+      );
+    },
+    [searchParams, router, params.id]
+  );
+
+  // Clear all filters
+  const clearFilters = useCallback(() => {
+    router.replace(`/projects/${params.id}`, { scroll: false });
+  }, [router, params.id]);
+
+  // Check if any filters are active
+  const hasActiveFilters = typeFilter !== "ALL" || aspectFilter !== "ALL" || sortOption !== "newest" || searchQuery !== "";
+
+  // Filter and sort assets
+  const filteredAssets = useMemo(() => {
+    if (!project?.assets) return [];
+
+    let assets = [...project.assets];
+
+    // Filter by type
+    if (typeFilter !== "ALL") {
+      assets = assets.filter((a) => a.type === typeFilter);
+    }
+
+    // Filter by aspect ratio
+    if (aspectFilter !== "ALL") {
+      assets = assets.filter((a) => a.aspectRatio === aspectFilter);
+    }
+
+    // Filter by search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      assets = assets.filter(
+        (a) => a.prompt?.toLowerCase().includes(query)
+      );
+    }
+
+    // Sort
+    assets.sort((a, b) => {
+      switch (sortOption) {
+        case "oldest":
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        case "type":
+          return a.type.localeCompare(b.type);
+        case "newest":
+        default:
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+    });
+
+    return assets;
+  }, [project?.assets, typeFilter, aspectFilter, sortOption, searchQuery]);
 
   useEffect(() => {
     if (params.id) {
@@ -337,13 +474,181 @@ export default function ProjectDetailPage() {
         />
       )}
 
-      {/* Assets Grid */}
-      {project.assets.length === 0 ? (
-        <Card className="border-4 border-foreground">
-          <CardContent className="flex flex-col items-center justify-center p-16 space-y-6">
-            <div className="w-24 h-24 border-4 border-dashed border-muted-foreground flex items-center justify-center">
+      {/* Assets Section */}
+      <div className="space-y-4">
+        {/* Filter Controls - only show if there are assets */}
+        {project.assets && project.assets.length > 0 && (
+          <Card className="border-4 border-foreground">
+            <CardContent className="p-4">
+              <div className="flex flex-col gap-4">
+                {/* Search and controls row */}
+                <div className="flex flex-col sm:flex-row gap-4">
+                  {/* Search input */}
+                  <div className="relative flex-1">
+                    <svg
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                    <Input
+                      placeholder="Search by prompt..."
+                      value={searchQuery}
+                      onChange={(e) => updateFilters({ q: e.target.value })}
+                      className="pl-10 h-10"
+                    />
+                  </div>
+
+                  {/* Filter dropdowns */}
+                  <div className="flex flex-wrap gap-2">
+                    <Select
+                      value={typeFilter}
+                      onValueChange={(value) => updateFilters({ type: value as AssetType })}
+                    >
+                      <SelectTrigger className="w-[140px] border-4 border-foreground bg-background text-foreground h-10">
+                        <SelectValue placeholder="Asset Type" />
+                      </SelectTrigger>
+                      <SelectContent className="border-4 border-foreground bg-background">
+                        {ASSET_TYPE_OPTIONS.map((option) => (
+                          <SelectItem
+                            key={option.value}
+                            value={option.value}
+                            className="text-foreground hover:bg-accent"
+                          >
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Select
+                      value={aspectFilter}
+                      onValueChange={(value) => updateFilters({ aspect: value as AspectRatioFilter })}
+                    >
+                      <SelectTrigger className="w-[160px] border-4 border-foreground bg-background text-foreground h-10">
+                        <SelectValue placeholder="Aspect Ratio" />
+                      </SelectTrigger>
+                      <SelectContent className="border-4 border-foreground bg-background">
+                        {ASPECT_RATIO_OPTIONS.map((option) => (
+                          <SelectItem
+                            key={option.value}
+                            value={option.value}
+                            className="text-foreground hover:bg-accent"
+                          >
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Select
+                      value={sortOption}
+                      onValueChange={(value) => updateFilters({ sort: value as SortOption })}
+                    >
+                      <SelectTrigger className="w-[140px] border-4 border-foreground bg-background text-foreground h-10">
+                        <SelectValue placeholder="Sort By" />
+                      </SelectTrigger>
+                      <SelectContent className="border-4 border-foreground bg-background">
+                        {SORT_OPTIONS.map((option) => (
+                          <SelectItem
+                            key={option.value}
+                            value={option.value}
+                            className="text-foreground hover:bg-accent"
+                          >
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {hasActiveFilters && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={clearFilters}
+                        className="h-10 font-bold"
+                      >
+                        <svg
+                          className="w-4 h-4 mr-1"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                        Clear
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Results count */}
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    Showing <span className="font-bold text-foreground">{filteredAssets.length}</span> of{" "}
+                    <span className="font-bold text-foreground">{project.assets.length}</span> assets
+                  </span>
+                  {hasActiveFilters && (
+                    <span className="text-xs text-muted-foreground uppercase tracking-wider">
+                      Filters active
+                    </span>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Empty state */}
+        {(!project.assets || project.assets.length === 0) ? (
+          <Card className="border-4 border-foreground">
+            <CardContent className="flex flex-col items-center justify-center p-16 space-y-6">
+              <div className="w-24 h-24 border-4 border-dashed border-muted-foreground flex items-center justify-center">
+                <svg
+                  className="w-12 h-12 text-muted-foreground"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+              <div className="text-center space-y-2">
+                <p className="text-xl font-bold">No assets yet</p>
+                <p className="text-muted-foreground">
+                  Generate your first ad assets for this project
+                </p>
+              </div>
+              <Link href="/generate">
+                <Button size="lg" className="font-black">
+                  Generate Assets
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        ) : filteredAssets.length === 0 ? (
+          /* No results from filtering */
+          <Card className="border-4 border-foreground">
+            <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">
               <svg
-                className="w-12 h-12 text-muted-foreground"
+                className="w-16 h-16 text-muted-foreground"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -352,26 +657,24 @@ export default function ProjectDetailPage() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 />
               </svg>
-            </div>
-            <div className="text-center space-y-2">
-              <p className="text-xl font-bold">No assets yet</p>
-              <p className="text-muted-foreground">
-                Generate your first ad assets for this project
-              </p>
-            </div>
-            <Link href="/generate">
-              <Button size="lg" className="font-black">
-                Generate Assets
+              <div className="text-center space-y-2">
+                <p className="text-xl font-bold">No matching assets</p>
+                <p className="text-muted-foreground">
+                  Try adjusting your filters or search query
+                </p>
+              </div>
+              <Button variant="outline" onClick={clearFilters} className="font-bold">
+                Clear Filters
               </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {project.assets.map((asset) => (
+            </CardContent>
+          </Card>
+        ) : (
+          /* Assets grid */
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {filteredAssets.map((asset) => (
             <Card
               key={asset.id}
               className="border-4 border-foreground overflow-hidden group"
@@ -456,8 +759,9 @@ export default function ProjectDetailPage() {
               </CardContent>
             </Card>
           ))}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

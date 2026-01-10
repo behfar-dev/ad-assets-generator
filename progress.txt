@@ -309,3 +309,30 @@ Each completed task should be logged with:
 - `src/app/(dashboard)/generate/page.tsx` (dialog responsive classes)
 - `src/components/brand/brand-asset-selector.tsx` (dialog responsive classes)
 - `src/components/brand/upload-asset-dialog.tsx` (dialog responsive classes)
+
+---
+
+### Iteration 11 - UI-003: Enhanced asset filtering and sorting in project detail page
+**Status:** Completed
+**Task:** Add filter, sort, and search functionality to the project detail assets grid
+
+**Changes:**
+- Updated `src/app/(dashboard)/projects/[id]/page.tsx` with comprehensive filtering system:
+  - **Filter dropdowns:** Asset type (All/Image/Video/Copy), Aspect ratio (All/9:16/3:4/1:1/4:3/16:9)
+  - **Sort options:** Newest first, Oldest first, By type
+  - **Search input:** Filter assets by prompt keywords
+  - **URL persistence:** Filter state saved in URL params (type, aspect, sort, q)
+  - **Results counter:** Shows "X of Y assets" with active filter indicator
+  - **Clear filters button:** Appears when filters are active
+  - **Empty state:** Special UI when no assets match filters
+
+**Decisions:**
+- Used URL search params for filter state to enable bookmarking/sharing filtered views
+- Client-side filtering with useMemo for performance
+- Default values omitted from URL to keep URLs clean
+- Brutalist design maintained with thick borders on controls
+- Mobile-responsive layout: stacks search and filters vertically on small screens
+- Added "No matching assets" empty state with clear filters action
+
+**Files changed:**
+- `src/app/(dashboard)/projects/[id]/page.tsx`
