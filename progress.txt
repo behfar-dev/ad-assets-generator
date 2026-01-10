@@ -375,3 +375,47 @@ Each completed task should be logged with:
 **Files changed:**
 - `src/components/asset/asset-detail-modal.tsx` (new)
 - `src/app/(dashboard)/projects/[id]/page.tsx`
+
+---
+
+### Iteration 13 - UI-005: Add bulk asset operations (select multiple, download as ZIP, bulk delete)
+**Status:** Completed
+**Task:** Add bulk asset operations with select multiple, download as ZIP, and bulk delete
+
+**Changes:**
+1. **Installed `jszip` package** for client-side ZIP file generation
+
+2. **Created `src/components/asset/bulk-actions-toolbar.tsx`** - New component:
+   - Fixed toolbar appears when assets are selected
+   - Shows selection count with "X of Y selected"
+   - Select All / Clear Selection toggle checkbox
+   - Download ZIP button with progress indicator
+   - Bulk delete button with inline confirmation
+   - Downloads images and videos, bundles copy assets into text file
+   - Intelligent file naming: `{type}-{ratio}-{date}-{index}.{ext}`
+   - ZIP file named: `{project-name}-assets-{timestamp}.zip`
+
+3. **Updated `src/app/(dashboard)/projects/[id]/page.tsx`**:
+   - Added `selectedAssetIds` state (Set<string>) for tracking selections
+   - Added `isSelectionMode` state for toggling selection UI
+   - Added "Select" button in filter bar to enter selection mode
+   - Checkboxes appear on asset cards (visible on hover, always visible in selection mode)
+   - Selected assets show primary border color and checkmark overlay
+   - Card click behavior changes in selection mode (toggle select vs open modal)
+   - Integrated BulkActionsToolbar component
+   - Created `handleBulkDelete` function to delete multiple assets via API
+   - Created `toggleAssetSelection`, `selectAllAssets`, `clearSelection` handlers
+
+**Decisions:**
+- Used client-side JSZip for ZIP generation (no server-side processing needed)
+- Selection mode is toggle-able via button, auto-exits when selection is cleared
+- Checkboxes visible on hover (desktop UX) but always visible in selection mode
+- Bulk delete iterates through assets (API doesn't have bulk delete endpoint)
+- Copy assets bundled into single "ad-copy.txt" file in ZIP
+- Progress bar shows download progress during ZIP creation
+- Brutalist design: inverted colors toolbar, heavy borders on checkboxes
+
+**Files changed:**
+- `package.json` (added jszip dependency)
+- `src/components/asset/bulk-actions-toolbar.tsx` (new)
+- `src/app/(dashboard)/projects/[id]/page.tsx`

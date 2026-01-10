@@ -184,9 +184,11 @@
         "Test with large number of assets (50+)",
         "Clear selection after bulk action completes"
       ],
-      "passes": false,
+      "passes": true,
       "priority": "P1",
-      "estimatedComplexity": "high"
+      "estimatedComplexity": "high",
+      "completedAt": "2026-01-10",
+      "notes": "Created src/components/asset/bulk-actions-toolbar.tsx with JSZip for client-side ZIP generation. Selection mode toggle, checkboxes on asset cards, bulk download with progress, inline delete confirmation. ZIP bundles images/videos as individual files, copy assets as ad-copy.txt."
     },
     {
       "id": "UX-001",

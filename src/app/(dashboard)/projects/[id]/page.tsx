@@ -15,6 +15,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BrandEditor } from "@/components/brand/brand-editor";
 import { AssetDetailModal } from "@/components/asset/asset-detail-modal";
+import { BulkActionsToolbar } from "@/components/asset/bulk-actions-toolbar";
 
 interface Asset {
   id: string;
@@ -93,6 +94,10 @@ export default function ProjectDetailPage() {
   const [isExtracting, setIsExtracting] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
+
+  // Bulk selection state
+  const [selectedAssetIds, setSelectedAssetIds] = useState<Set<string>>(new Set());
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
 
   // Filter state from URL params
   const typeFilter = (searchParams.get("type") as AssetType) || "ALL";
@@ -420,6 +425,80 @@ export default function ProjectDetailPage() {
     router.push(`/generate?${queryParams.toString()}`);
   };
 
+  // Bulk selection handlers
+  const toggleAssetSelection = (assetId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setSelectedAssetIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(assetId)) {
+        newSet.delete(assetId);
+      } else {
+        newSet.add(assetId);
+      }
+      // Exit selection mode if nothing selected
+      if (newSet.size === 0) {
+        setIsSelectionMode(false);
+      } else if (!isSelectionMode) {
+        setIsSelectionMode(true);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAllAssets = () => {
+    const allIds = new Set(filteredAssets.map((a) => a.id));
+    setSelectedAssetIds(allIds);
+    setIsSelectionMode(true);
+  };
+
+  const clearSelection = () => {
+    setSelectedAssetIds(new Set());
+    setIsSelectionMode(false);
+  };
+
+  const handleBulkDelete = async (assetIds: string[]) => {
+    // Delete assets one by one (API doesn't support bulk delete currently)
+    const errors: string[] = [];
+
+    for (const id of assetIds) {
+      try {
+        const res = await fetch(`/api/assets/${id}`, { method: "DELETE" });
+        if (!res.ok) {
+          const data = await res.json();
+          errors.push(data.error || `Failed to delete asset ${id}`);
+        }
+      } catch (error) {
+        errors.push(`Failed to delete asset ${id}`);
+        console.error("Delete error:", error);
+      }
+    }
+
+    if (errors.length > 0) {
+      console.error("Bulk delete errors:", errors);
+    }
+
+    // Refresh project data
+    const projectRes = await fetch(`/api/projects/${params.id}`);
+    const updatedProject = await projectRes.json();
+    setProject(updatedProject);
+
+    // Clear selection
+    clearSelection();
+
+    if (errors.length > 0) {
+      throw new Error(`Failed to delete ${errors.length} asset(s)`);
+    }
+  };
+
+  // Get selected assets for toolbar
+  const selectedAssets = useMemo(() => {
+    return filteredAssets.filter((a) => selectedAssetIds.has(a.id));
+  }, [filteredAssets, selectedAssetIds]);
+
+  const allFilteredSelected =
+    filteredAssets.length > 0 &&
+    filteredAssets.every((a) => selectedAssetIds.has(a.id));
+
   if (isLoading) {
     return (
       <div className="space-y-8">
@@ -633,21 +712,65 @@ export default function ProjectDetailPage() {
                   </div>
                 </div>
 
-                {/* Results count */}
+                {/* Results count and select toggle */}
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">
                     Showing <span className="font-bold text-foreground">{filteredAssets.length}</span> of{" "}
                     <span className="font-bold text-foreground">{project.assets.length}</span> assets
                   </span>
-                  {hasActiveFilters && (
-                    <span className="text-xs text-muted-foreground uppercase tracking-wider">
-                      Filters active
-                    </span>
-                  )}
+                  <div className="flex items-center gap-4">
+                    {hasActiveFilters && (
+                      <span className="text-xs text-muted-foreground uppercase tracking-wider">
+                        Filters active
+                      </span>
+                    )}
+                    {filteredAssets.length > 0 && (
+                      <Button
+                        variant={isSelectionMode ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => {
+                          if (isSelectionMode) {
+                            clearSelection();
+                          } else {
+                            setIsSelectionMode(true);
+                          }
+                        }}
+                        className="font-bold"
+                      >
+                        <svg
+                          className="w-4 h-4 mr-1"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                          />
+                        </svg>
+                        {isSelectionMode ? "Cancel" : "Select"}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Bulk Actions Toolbar - show when items are selected */}
+        {isSelectionMode && selectedAssetIds.size > 0 && (
+          <BulkActionsToolbar
+            selectedAssets={selectedAssets}
+            totalAssets={filteredAssets.length}
+            projectName={project.name}
+            onSelectAll={selectAllAssets}
+            onClearSelection={clearSelection}
+            onDelete={handleBulkDelete}
+            allSelected={allFilteredSelected}
+          />
         )}
 
         {/* Empty state */}
@@ -713,78 +836,149 @@ export default function ProjectDetailPage() {
         ) : (
           /* Assets grid */
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filteredAssets.map((asset) => (
-            <Card
-              key={asset.id}
-              className="border-4 border-foreground overflow-hidden group cursor-pointer hover:border-primary transition-colors"
-              onClick={() => handleAssetClick(asset)}
-            >
-              <div className="relative aspect-square bg-muted">
-                {asset.type === "IMAGE" && (
-                  <img
-                    src={asset.thumbnailUrl || asset.url}
-                    alt={asset.prompt || "Generated asset"}
-                    className="w-full h-full object-cover"
-                  />
-                )}
-                {asset.type === "VIDEO" && (
-                  <video
-                    src={asset.url}
-                    className="w-full h-full object-cover"
-                    muted
-                    loop
-                    onMouseEnter={(e) => e.currentTarget.play()}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.pause();
-                      e.currentTarget.currentTime = 0;
-                    }}
-                  />
-                )}
-                {asset.type === "COPY" && (
-                  <div className="w-full h-full p-4 flex items-center justify-center text-center">
-                    <p className="text-sm line-clamp-6">{asset.prompt}</p>
-                  </div>
-                )}
-                <div className="absolute top-2 right-2">
-                  <span className="bg-foreground text-background px-2 py-1 text-xs font-bold uppercase">
-                    {asset.type}
-                  </span>
-                </div>
-                {/* Hover overlay with quick actions */}
-                <div className="absolute inset-0 bg-foreground/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <div className="text-center">
-                    <svg
-                      className="w-10 h-10 mx-auto text-background mb-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+            {filteredAssets.map((asset) => {
+              const isSelected = selectedAssetIds.has(asset.id);
+              return (
+                <Card
+                  key={asset.id}
+                  className={`border-4 overflow-hidden group cursor-pointer transition-colors ${
+                    isSelected
+                      ? "border-primary bg-primary/5"
+                      : "border-foreground hover:border-primary"
+                  }`}
+                  onClick={() => {
+                    if (isSelectionMode) {
+                      toggleAssetSelection(asset.id, { stopPropagation: () => {} } as React.MouseEvent);
+                    } else {
+                      handleAssetClick(asset);
+                    }
+                  }}
+                >
+                  <div className="relative aspect-square bg-muted">
+                    {asset.type === "IMAGE" && (
+                      <img
+                        src={asset.thumbnailUrl || asset.url}
+                        alt={asset.prompt || "Generated asset"}
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                    {asset.type === "VIDEO" && (
+                      <video
+                        src={asset.url}
+                        className="w-full h-full object-cover"
+                        muted
+                        loop
+                        onMouseEnter={(e) => e.currentTarget.play()}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.pause();
+                          e.currentTarget.currentTime = 0;
+                        }}
+                      />
+                    )}
+                    {asset.type === "COPY" && (
+                      <div className="w-full h-full p-4 flex items-center justify-center text-center">
+                        <p className="text-sm line-clamp-6">{asset.prompt}</p>
+                      </div>
+                    )}
+
+                    {/* Selection checkbox - show in selection mode or on hover */}
+                    <div
+                      className={`absolute top-2 left-2 z-10 ${
+                        isSelectionMode || isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                      } transition-opacity`}
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                      />
-                    </svg>
-                    <span className="text-background text-sm font-bold uppercase">
-                      View Details
-                    </span>
+                      <button
+                        onClick={(e) => toggleAssetSelection(asset.id, e)}
+                        className={`w-6 h-6 border-2 flex items-center justify-center transition-colors ${
+                          isSelected
+                            ? "bg-primary border-primary text-primary-foreground"
+                            : "bg-background border-foreground hover:border-primary"
+                        }`}
+                        aria-label={isSelected ? "Deselect asset" : "Select asset"}
+                      >
+                        {isSelected && (
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={3}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+
+                    <div className="absolute top-2 right-2">
+                      <span className="bg-foreground text-background px-2 py-1 text-xs font-bold uppercase">
+                        {asset.type}
+                      </span>
+                    </div>
+
+                    {/* Hover overlay with quick actions - hide in selection mode */}
+                    {!isSelectionMode && (
+                      <div className="absolute inset-0 bg-foreground/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <div className="text-center">
+                          <svg
+                            className="w-10 h-10 mx-auto text-background mb-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                            />
+                          </svg>
+                          <span className="text-background text-sm font-bold uppercase">
+                            View Details
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Selection mode overlay - show checkmark icon when selected */}
+                    {isSelectionMode && isSelected && (
+                      <div className="absolute inset-0 bg-primary/20 flex items-center justify-center pointer-events-none">
+                        <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center">
+                          <svg
+                            className="w-10 h-10 text-primary-foreground"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={3}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              </div>
-              <CardContent className="p-3">
-                <p className="text-xs text-muted-foreground">
-                  {formatDate(asset.createdAt)}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
+                  <CardContent className="p-3">
+                    <p className="text-xs text-muted-foreground">
+                      {formatDate(asset.createdAt)}
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
